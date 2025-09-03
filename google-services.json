@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "119061341168",
+    "project_id": "testsocial-eccbe",
+    "storage_bucket": "testsocial-eccbe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119061341168:android:a71496f5b8fc25cc85f335",
+        "android_client_info": {
+          "package_name": "com.adityasohagpure.doodelpad_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjpQDbdPIGvek-_UIhc9oWo_U1bH2Mtis"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

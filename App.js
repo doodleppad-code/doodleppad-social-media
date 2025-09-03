@@ -1,20 +1,48 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+
+import "react-native-gesture-handler"
+import React from "react"
+import { NavigationContainer } from "@react-navigation/native"
+import { createStackNavigator } from "@react-navigation/stack"
+import Login from "./src/Login"
+import PhoneAuth from "./src/PhoneAuth"
+import Otp from "./src/Otp"
+import Details from "./src/Details"
+import Dashboard from "./src/Dashboard"
+
+// Initialize Firebase
+import '@react-native-firebase/app';
+
+const Stack = createStackNavigator();
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  return (<NavigationContainer>
+    <Stack.Navigator initialRouteName="Login">
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+      <Stack.Screen
+
+        name="Login"
+
+        component={Login}
+
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="PhoneAuth"
+        component={PhoneAuth}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="Otp"
+        component={Otp}
+        options={{ headerShown: false }} /> 
+      <Stack.Screen
+        name="Detail"
+        component={Details}
+        options={{ headerShown: false }} />
+
+      <Stack.Screen
+        name="Dashboard"
+        component={Dashboard}
+        options={{ headerShown: false }} />
+
+    </Stack.Navigator>
+  </NavigationContainer>);
+}
