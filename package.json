@@ -16,18 +16,26 @@
     "@react-native-masked-view/masked-view": "0.3.2",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.7",
+    "@shopify/react-native-skia": "^2.0.0-next.4",
+    "@terrylinla/react-native-sketch-canvas": "^0.8.0",
+    "cors": "^2.8.5",
     "expo": "~53.0.20",
     "expo-dev-client": "~5.2.4",
     "expo-status-bar": "~2.2.3",
+    "express": "^5.1.0",
     "install": "^0.13.0",
+    "mongoose": "^8.18.2",
     "react": "19.0.0",
     "react-native": "0.79.5",
     "react-native-country-picker-modal": "^2.0.0",
     "react-native-edge-to-edge": "1.6.0",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-vector-icons": "^10.3.0"
+    "react-native-vector-icons": "^10.3.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
