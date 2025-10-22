@@ -10,6 +10,7 @@ import Otp from "./src/Otp"
 import Details from "./src/Details"
 import Dashboard from "./src/Dashboard"
 import ChatScreen from "./src/ChatScreen"
+import SignUp from "./src/signup"
 import ChatList from "./src/ChatList"
 import DoodlePad from "./src/Doodlepad" 
 
@@ -58,6 +59,11 @@ export default function App() {
       <Stack.Screen
         name="ChatScreen"
         component={ChatScreen}
+        options={{ headerShown: false }} />
+        
+      <Stack.Screen
+        name="SignUp"
+        component={SignUp}
         options={{ headerShown: false }} />
       <Stack.Screen
         name="Doodlepad"
