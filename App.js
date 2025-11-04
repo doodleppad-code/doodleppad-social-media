@@ -1,5 +1,6 @@
 
 import "react-native-gesture-handler"
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React from "react"
 import { NavigationContainer } from "@react-navigation/native"
 import { createStackNavigator } from "@react-navigation/stack"
@@ -8,6 +9,11 @@ import PhoneAuth from "./src/PhoneAuth"
 import Otp from "./src/Otp"
 import Details from "./src/Details"
 import Dashboard from "./src/Dashboard"
+import ChatScreen from "./src/ChatScreen"
+import SignUp from "./src/signup"
+import ChatList from "./src/ChatList"
+import DoodlePad from "./src/Doodlepad" 
+
 
 // Initialize Firebase
 import '@react-native-firebase/app';
@@ -15,8 +21,10 @@ import '@react-native-firebase/app';
 const Stack = createStackNavigator();
 
 export default function App() {
-  return (<NavigationContainer>
-    <Stack.Navigator initialRouteName="Login">
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Login">
 
       <Stack.Screen
 
@@ -43,6 +51,26 @@ export default function App() {
         component={Dashboard}
         options={{ headerShown: false }} />
 
+      <Stack.Screen
+        name="ChatList"
+        component={ChatList}
+        options={{ headerShown: false }} />
+
+      <Stack.Screen
+        name="ChatScreen"
+        component={ChatScreen}
+        options={{ headerShown: false }} />
+        
+      <Stack.Screen
+        name="SignUp"
+        component={SignUp}
+        options={{ headerShown: false }} />
+      <Stack.Screen
+        name="Doodlepad"
+        component={DoodlePad}
+        options={{ headerShown: false }} />
     </Stack.Navigator>
-  </NavigationContainer>);
+      </NavigationContainer>
+    </GestureHandlerRootView>
+  );
 }
