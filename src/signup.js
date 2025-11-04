@@ -23,10 +23,10 @@ const SignUp = ({ navigation }) => {
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ====== API call to backend ======
+  // ====== API call to backend ====
 const handleSignUp = async () => {
   if (!firstName || !lastName || !username || !password || !rePassword) {
-    Alert.alert("Error", "Please fill in all fields");
+    Alert.alert("Error", "Please fill in all field");
     return;
   }
 
