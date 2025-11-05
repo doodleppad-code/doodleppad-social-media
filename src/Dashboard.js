@@ -43,10 +43,13 @@ const Dashboard = ({ navigation }) => {
       <View style={styles.fabContainer}>
         {open && (
           <View style={styles.optionContainer}>
-            <TouchableOpacity style={styles.optionButton}>
-              <Ionicons name="image-outline" size={22} color="#fff" />
-              <Text style={styles.optionText}>Image</Text>
-            </TouchableOpacity>
+             <TouchableOpacity
+      style={styles.optionButton}
+      onPress={() => navigation.navigate('ImagePost')}
+    >
+      <Ionicons name="image-outline" size={22} color="#fff" />
+      <Text style={styles.optionText}>Image</Text>
+    </TouchableOpacity>
             <TouchableOpacity style={styles.optionButton}>
               <Ionicons name="mic-outline" size={22} color="#fff" />
               <Text style={styles.optionText}>Audio</Text>
