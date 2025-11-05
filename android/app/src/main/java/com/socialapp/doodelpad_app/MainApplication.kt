@@ -1,4 +1,4 @@
-package com.adityasohagpure.doodelpad_app
+package com.socialapp.doodelpad_app
 
 import android.app.Application
 import android.content.res.Configuration
