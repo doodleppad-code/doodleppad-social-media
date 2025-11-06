@@ -1,24 +1,25 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
-import { Ionicons, Feather, MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 
 const Dashboard = ({ navigation }) => {
   const [open, setOpen] = useState(false);
 
   const handleMailPress = () => {
-    if (typeof navigation !== "undefined") {
+    if (navigation) {
       navigation.navigate("ChatList");
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={styles.screen}>
       {/* Header */}
-      <View style={styles.container}>
+      <View style={styles.header}>
         <View style={styles.leftSection}>
           <TouchableOpacity style={styles.circle}>
             <Text style={styles.circleText}>A</Text>
           </TouchableOpacity>
+
           <TouchableOpacity>
             <Ionicons name="home" size={26} color="black" />
           </TouchableOpacity>
@@ -28,32 +29,37 @@ const Dashboard = ({ navigation }) => {
 
         <View style={styles.rightSection}>
           <TouchableOpacity>
-            <Feather name="search" size={24} color="black" />
+            <Feather name="search" size={23} color="black" />
           </TouchableOpacity>
           <TouchableOpacity>
-            <Ionicons name="notifications-outline" size={26} color="black" />
+            <Ionicons name="notifications-outline" size={25} color="black" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleMailPress}>
-            <MaterialIcons name="mail-outline" size={26} color="black" />
+            <MaterialIcons name="mail-outline" size={25} color="black" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Floating Action Button + Options */}
+      {/* Floating Action Button */}
       <View style={styles.fabContainer}>
         {open && (
           <View style={styles.optionContainer}>
             <TouchableOpacity style={styles.optionButton}>
-              <Ionicons name="image-outline" size={22} color="#fff" />
+              <Ionicons name="image-outline" size={20} color="#fff" />
               <Text style={styles.optionText}>Image</Text>
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.optionButton}>
-              <Ionicons name="mic-outline" size={22} color="#fff" />
+              <Ionicons name="mic-outline" size={20} color="#fff" />
               <Text style={styles.optionText}>Audio</Text>
             </TouchableOpacity>
-             <TouchableOpacity style={styles.optionButton}>
-              <Ionicons name="mic-outline" size={22} color="#fff" />
-              <Text style={styles.optionText} onPress={() => navigation.navigate('Doodlepad')}>canvas</Text>
+
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => navigation.navigate("Doodlepad")}
+            >
+              <Ionicons name="brush-outline" size={20} color="#fff" />
+              <Text style={styles.optionText}>Canvas</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -70,38 +76,42 @@ const Dashboard = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
+    marginVertical:"10",
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
     elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
   },
   leftSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
   },
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 18,
   },
   title: {
     fontSize: 20,
-    fontFamily: "serif",
     fontWeight: "600",
+    color: "#000",
   },
   circle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.2,
     borderColor: "black",
     alignItems: "center",
     justifyContent: "center",
@@ -112,11 +122,11 @@ const styles = StyleSheet.create({
     color: "black",
   },
 
-  // Floating Button Styles
+  // Floating button
   fabContainer: {
     position: "absolute",
-    bottom: 20,
-    right: 20,
+    bottom: 30,
+    right: 25,
     alignItems: "flex-end",
   },
   fab: {
@@ -136,13 +146,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#007AFF",
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     borderRadius: 20,
     marginBottom: 10,
   },
   optionText: {
     color: "#fff",
-    marginLeft: 6,
+    marginLeft: 8,
     fontWeight: "600",
   },
 });

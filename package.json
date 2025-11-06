@@ -18,7 +18,6 @@
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.7",
     "@shopify/react-native-skia": "^2.0.0-next.4",
-    "@terrylinla/react-native-sketch-canvas": "^0.8.0",
     "cors": "^2.8.5",
     "expo": "~53.0.20",
     "expo-dev-client": "~5.2.4",

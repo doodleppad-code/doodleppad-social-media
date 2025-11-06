@@ -10,12 +10,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons"; // ✅ import missing icon
 
 export default function Login() {
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // ✅ added state
 
   const handleSignup = () => {
     navigation.navigate("SignUp");
@@ -29,13 +31,9 @@ export default function Login() {
 
     try {
       setLoading(true);
-
-      // 🌐 Replace with your deployed backend URL
       const response = await fetch("https://mobserv-0din.onrender.com/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -47,13 +45,9 @@ export default function Login() {
         return;
       }
 
-      // ✅ Login successful
       Alert.alert("Success", "Login successful!");
       console.log("User:", data.user);
-
-      // Navigate to chat or home screen
       navigation.navigate("Dashboard", { user: data.user });
-
     } catch (err) {
       setLoading(false);
       Alert.alert("Error", "Unable to connect to server");
@@ -63,28 +57,40 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      {/* Top Logo */}
+      {/* Logo */}
       <Image source={require("../assets/logo2.png")} style={styles.logo} />
 
-      {/* Login Card */}
+      {/* Card */}
       <View style={styles.card}>
         {/* Email */}
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Enter your Email"
+          placeholderTextColor="#888"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
         />
 
-        {/* Password */}
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        {/* Password with Eye Toggle */}
+
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Enter your Password"
+            placeholderTextColor="#888"
+            secureTextEntry={!showPassword}
+            value={showPassword ? password : "*".repeat(password.length)} // Show * when hidden
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye" : "eye-off"}
+              size={22}
+              color="gray"
+            />
+          </TouchableOpacity>
+        </View>
 
         {/* Forgot Password */}
         <TouchableOpacity style={styles.forgot}>
@@ -105,7 +111,7 @@ export default function Login() {
         )}
       </TouchableOpacity>
 
-      {/* Sign up link */}
+      {/* Signup Link */}
       <View style={styles.signupRow}>
         <Text style={styles.signupText}>Don’t have an account? </Text>
         <TouchableOpacity onPress={handleSignup}>
@@ -144,11 +150,41 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 20,
   },
-  forgot: {
-    alignItems: "flex-end",
+  // passwordContainer: {
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: "#000",
+  //   marginBottom: 20,
+  // },
+  divider: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginBottom: 10,
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    marginTop: 10,
+    paddingVertical: 4,
+  },
+
+  passwordInput: {
+    flex: 1,
+    color: '#000',
+    paddingVertical: 8,
+    fontSize: 16,
+  },
+
+  forgot: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+
   forgotText: {
-    color: "#555",
+    color: 'gray',
     fontSize: 14,
   },
   signInButton: {
