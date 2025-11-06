@@ -16,9 +16,6 @@ import DoodlePad from "./src/Doodlepad"
 import Imagepost from "./src/Imagepost"
 
 
-// Initialize Firebase
-import '@react-native-firebase/app';
-
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -72,8 +69,8 @@ export default function App() {
         options={{ headerShown: false }} />
     
      <Stack.Screen
-        name="Imagepost"
-        component={Imagepost}
+      name="ImagePost"
+      component={Imagepost}
         options={{ headerShown: false }} />
     </Stack.Navigator>
       </NavigationContainer>
