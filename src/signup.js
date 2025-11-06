@@ -96,6 +96,7 @@ const handleSignUp = async () => {
             <TextInput
               style={styles.input}
               placeholder="First Name"
+              placeholderTextColor="#888"
               value={firstName}
               onChangeText={setFirstName}
             />
@@ -104,7 +105,8 @@ const handleSignUp = async () => {
           <View style={styles.inputContainerHalf}>
             <TextInput
               style={styles.input}
-              placeholder="Last Name"
+             placeholder= "Last Name"
+              placeholderTextColor="#888"
               value={lastName}
               onChangeText={setLastName}
             />
@@ -114,7 +116,8 @@ const handleSignUp = async () => {
         {/* Username / Email */}
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Enter your email"
+          placeholderTextColor="#888"
           value={username}
           onChangeText={setUsername}
         />
@@ -123,9 +126,11 @@ const handleSignUp = async () => {
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Password"
+            placeholder="Enter your password"
+            placeholderTextColor="#888"
             secureTextEntry={!showPassword}
-            value={password}
+            // value={password}
+            value={showPassword ? password : "*".repeat(password.length)} // Show * when hidden
             onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
@@ -141,9 +146,11 @@ const handleSignUp = async () => {
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Re-enter Password"
+            placeholder="Re-enter Password"         
+            placeholderTextColor="#888"
             secureTextEntry={!showRePassword}
-            value={rePassword}
+            // value={rePassword}
+            value={showRePassword ? rePassword : "*".repeat(rePassword.length)}
             onChangeText={setRePassword}
           />
           <TouchableOpacity onPress={() => setShowRePassword(!showRePassword)}>
@@ -198,6 +205,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
     marginBottom: 10,
+    marginVertical: 10,
+  
   },
   title: {
     fontSize: 28,
@@ -229,6 +238,7 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
+     color: '#000',
     fontSize: 16,
     paddingVertical: 8,
   },
