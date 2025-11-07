@@ -12,7 +12,18 @@ import {
   StatusBar
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import auth from '@react-native-firebase/auth';
+
+// Native Firebase auth was removed from project to avoid native plugin dependencies.
+// Provide a safe stub so the app can run without the native Firebase modules.
+const auth = (() => {
+  const impl = {
+    onAuthStateChanged: () => () => {},
+    signInWithPhoneNumber: async () => { throw new Error('Native Firebase auth not installed'); },
+  };
+  const fn = () => impl;
+  Object.assign(fn, impl);
+  return fn;
+})();
 import { Ionicons } from '@expo/vector-icons';
 import CountryPicker from 'react-native-country-picker-modal';
 
@@ -49,8 +60,11 @@ export default function PhoneAuth() {
   }
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(handleAuthStateChanged);
-    return subscriber;
+    if (typeof auth === 'function' && auth().onAuthStateChanged) {
+      const subscriber = auth().onAuthStateChanged(handleAuthStateChanged);
+      return subscriber;
+    }
+    return () => {};
   }, []);
 
   async function handleSendOTP() {
@@ -61,23 +75,14 @@ export default function PhoneAuth() {
       return;
     }
 
+    // If native Firebase auth isn't installed, inform the user (or developer) and bail.
     setLoading(true);
     try {
-      const confirmation = await auth().signInWithPhoneNumber(fullPhoneNumber);
-      setConfirm(confirmation);
-      Alert.alert('Success', 'OTP sent to your phone number!');
-      addDebugInfo('OTP sent successfully');
-      // Navigate to OTP screen with verificationId
-      navigation.navigate('Otp', { phoneNumber: fullPhoneNumber, verificationId: confirmation.verificationId });
+      await auth().signInWithPhoneNumber(fullPhoneNumber);
+      // If this resolves, it means native auth is present. But in our stub it will throw.
     } catch (error) {
-      let errorMessage = 'Failed to send OTP';
-      if (error.code === 'auth/invalid-phone-number') {
-        errorMessage = 'Invalid phone number format. Use +91XXXXXXXXXX';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many requests. Please try again later.';
-      }
-      Alert.alert('Error', errorMessage);
-      addDebugInfo(`Error sending OTP: ${error.code}`);
+      Alert.alert('Unavailable', 'Native Firebase phone auth is not installed in this build.');
+      addDebugInfo(`Native auth not available: ${error?.message || error}`);
     } finally {
       setLoading(false);
     }

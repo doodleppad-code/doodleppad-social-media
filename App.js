@@ -13,10 +13,8 @@ import ChatScreen from "./src/ChatScreen"
 import SignUp from "./src/signup"
 import ChatList from "./src/ChatList"
 import DoodlePad from "./src/Doodlepad" 
+import Imagepost from "./src/Imagepost"
 
-
-// Initialize Firebase
-import '@react-native-firebase/app';
 
 const Stack = createStackNavigator();
 
@@ -68,6 +66,11 @@ export default function App() {
       <Stack.Screen
         name="Doodlepad"
         component={DoodlePad}
+        options={{ headerShown: false }} />
+    
+     <Stack.Screen
+      name="ImagePost"
+      component={Imagepost}
         options={{ headerShown: false }} />
     </Stack.Navigator>
       </NavigationContainer>
