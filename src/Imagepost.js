@@ -1,167 +1,290 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
-  Button,
+  Text,
+  TextInput,
+  TouchableOpacity,
   Image,
+  StyleSheet,
   ActivityIndicator,
   Alert,
-  StyleSheet,
   ScrollView,
-  Text,
-} from 'react-native';
-import { launchImageLibrary } from 'react-native-image-picker';
-import { createClient } from '@supabase/supabase-js';
-import * as FileSystem from 'expo-file-system';
-import 'react-native-url-polyfill/auto';
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Video } from "expo-av";
+import { launchImageLibrary } from "react-native-image-picker";
+import { createClient } from "@supabase/supabase-js";
+import * as FileSystem from "expo-file-system";
+import "react-native-url-polyfill/auto";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-// 🔐 Your Supabase credentials
-const supabaseUrl = 'https://rnivpbqqihdwtunlihnp.supabase.co';
+// 📦 Supabase credentials
+const supabaseUrl = "https://rnivpbqqihdwtunlihnp.supabase.co";
 const supabaseAnonKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaXZwYnFxaWhkd3R1bmxpaG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNjEzMDksImV4cCI6MjA3NzkzNzMwOX0.5csZgmeQRRPcfrHPUQhmF26K7xy489oi8mCVtbp-v4w';
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaXZwYnFxaWhkd3R1bmxpaG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNjEzMDksImV4cCI6MjA3NzkzNzMwOX0.5csZgmeQRRPcfrHPUQhmF26K7xy489oi8mCVtbp-v4w";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+const { width } = Dimensions.get("window");
+
 export default function ImagePost() {
+  const [caption, setCaption] = useState("");
   const [imageUri, setImageUri] = useState(null);
+  const [videoUri, setVideoUri] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [downloadURL, setDownloadURL] = useState(null);
 
-  // 📸 Pick image from gallery
   const pickImage = async () => {
     const result = await launchImageLibrary({
-      mediaType: 'photo',
+      mediaType: "photo",
       quality: 0.8,
     });
-
     if (result.assets && result.assets.length > 0) {
       setImageUri(result.assets[0].uri);
+      setVideoUri(null);
     }
   };
 
-  // ☁️ Upload image to Supabase Storage (bucket: doodleppad)
-const uploadImage = async () => {
-  if (!imageUri) {
-    Alert.alert('No image selected!');
-    return;
-  }
-
-  try {
-    setUploading(true);
-    const fileName = imageUri.substring(imageUri.lastIndexOf('/') + 1);
-    console.log('Uploading:', fileName);
-
-    // 1️⃣ Read file as base64
-    const base64Data = await FileSystem.readAsStringAsync(imageUri, {
-      encoding: FileSystem.EncodingType.Base64,
+  const pickVideo = async () => {
+    const result = await launchImageLibrary({
+      mediaType: "video",
+      videoQuality: "high",
     });
+    if (result.assets && result.assets.length > 0) {
+      setVideoUri(result.assets[0].uri);
+      setImageUri(null);
+    }
+  };
 
-    // 2️⃣ Convert base64 → binary Uint8Array
-    const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+  const uploadPost = async () => {
+    if (!imageUri && !videoUri && caption.trim() === "") {
+      Alert.alert("Nothing to post", "Write something or select media first.");
+      return;
+    }
 
-    // 3️⃣ Upload directly to Supabase
-    const { data, error } = await supabase.storage
-      .from('doodleppad')
-      .upload(`public/${fileName}`, binaryData, {
-        contentType: 'image/jpeg',
-        upsert: true,
-      });
+    try {
+      setUploading(true);
+      let publicUrl = null;
+      let contentType = "image/jpeg";
+      let uriToUpload = imageUri;
 
-    if (error) throw error;
+      if (videoUri) {
+        uriToUpload = videoUri;
+        contentType = "video/mp4";
+      }
 
-    // 4️⃣ Get public URL
-    const { data: publicData } = supabase.storage
-      .from('doodleppad')
-      .getPublicUrl(`post/${fileName}`);
+      if (uriToUpload) {
+        const fileName =
+          Date.now() + "_" + uriToUpload.substring(uriToUpload.lastIndexOf("/") + 1);
+        const base64Data = await FileSystem.readAsStringAsync(uriToUpload, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        const binaryData = Uint8Array.from(atob(base64Data), (c) =>
+          c.charCodeAt(0)
+        );
 
-    setDownloadURL(publicData.publicUrl);
-    Alert.alert('✅ Upload Complete!', 'Image uploaded successfully');
-  } catch (error) {
-    console.error('Upload failed:', error);
-    Alert.alert('❌ Upload failed', error.message);
-  } finally {
-    setUploading(false);
-  }
-};
-const testSupabase = async () => {
-  try {
-    const res = await fetch('https://rnivpbqqihdwtunlihnp.supabase.co');
-    console.log('✅ Supabase reachable:', res.status);
-  } catch (e) {
-    console.error('❌ Supabase not reachable:', e);
-  }
-};
+        const { data, error } = await supabase.storage
+          .from("doodleppad")
+          .upload(`post/${fileName}`, binaryData, {
+            contentType,
+            upsert: true,
+          });
+
+        if (error) throw error;
+
+        const { data: publicData } = supabase.storage
+          .from("doodleppad")
+          .getPublicUrl(`post/${fileName}`);
+
+        publicUrl = publicData.publicUrl;
+        setDownloadURL(publicUrl);
+      }
+
+      Alert.alert("✅ Post Created!", "Your post has been published.");
+      setCaption("");
+      setImageUri(null);
+      setVideoUri(null);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      Alert.alert("❌ Upload failed", error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📤 Upload Image to Supabase</Text>
 
-      <Button title="Pick Image" onPress={pickImage} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerRow}>
+          <Image
+            source={{
+              uri: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+            }}
+            style={styles.avatar}
+          />
+          <TextInput
+            style={styles.captionInput}
+            placeholder="What's on your mind?"
+            placeholderTextColor="#888"
+            value={caption}
+            onChangeText={setCaption}
+            multiline
+          />
+        </View>
 
-      {imageUri && (
-        <>
-          <Text style={styles.label}>Preview:</Text>
+        {/* Media Preview */}
+        {imageUri && (
           <Image
             source={{ uri: imageUri }}
-            style={styles.imagePreview}
+            style={styles.mediaPreview}
             resizeMode="cover"
           />
-        </>
-      )}
+        )}
 
-      {uploading ? (
-        <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
-      ) : (
-        imageUri && (
-          <Button title="Upload Image" onPress={uploadImage} color="#4CAF50" />
-        )
-      )}
-<Button title="Test Supabase Connection" onPress={testSupabase} />
-
-      {downloadURL && (
-        <>
-          <Text style={styles.label}>Uploaded Image:</Text>
-          <Image
-            source={{ uri: downloadURL }}
-            style={styles.imagePreview}
-            resizeMode="cover"
+        {videoUri && (
+          <Video
+            source={{ uri: videoUri }}
+            style={styles.mediaPreview}
+            useNativeControls
+            resizeMode="contain"
           />
-          <Text selectable style={styles.urlText}>
-            {downloadURL}
-          </Text>
-        </>
-      )}
-    </ScrollView>
+        )}
+
+        {/* Action Buttons */}
+        <View style={styles.actionBar}>
+          <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
+            <Ionicons name="image-outline" size={24} color="#3b82f6" />
+            <Text style={styles.iconText}>Photo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.iconButton} onPress={pickVideo}>
+            <Ionicons name="videocam-outline" size={24} color="#10b981" />
+            <Text style={styles.iconText}>Video</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Post Button */}
+        <TouchableOpacity
+          style={styles.postButton}
+          onPress={uploadPost}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.postButtonText}>Post</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Uploaded Post Preview */}
+        {downloadURL && (
+          <View style={styles.postPreview}>
+            <Text style={styles.previewTitle}>Your Uploaded Post</Text>
+
+            {downloadURL.endsWith(".mp4") ? (
+              <Video
+                source={{ uri: downloadURL }}
+                style={styles.mediaPreview}
+                useNativeControls
+                resizeMode="contain"
+              />
+            ) : (
+              <Image
+                source={{ uri: downloadURL }}
+                style={styles.mediaPreview}
+                resizeMode="cover"
+              />
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView></SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-    backgroundColor: '#f9f9f9',
+    padding: 16,
+    backgroundColor: "#fff",
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 20,
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  label: {
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+  },
+  captionInput: {
+    flex: 1,
+    minHeight: 60,
     fontSize: 16,
-    fontWeight: '600',
+    color: "#222",
+    textAlignVertical: "top",
+  },
+  mediaPreview: {
+    width: "100%",
+    height: width * 0.7,
+    borderRadius: 12,
+    marginVertical: 12,
+    backgroundColor: "#000",
+  },
+  actionBar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 8,
+    paddingVertical: 10,
+    borderTopWidth: 0.6,
+    borderColor: "#eee",
+  },
+  iconButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 6,
+  },
+  iconText: {
+    marginLeft: 6,
+    fontSize: 15,
+    color: "#444",
+  },
+  postButton: {
+    backgroundColor: "#3b82f6",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
     marginTop: 20,
   },
-  imagePreview: {
-    width: 250,
-    height: 250,
-    marginTop: 10,
-    borderRadius: 12,
+  postButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 17,
   },
-  urlText: {
-    marginTop: 10,
-    fontSize: 12,
-    color: 'blue',
-    textAlign: 'center',
+  postPreview: {
+    marginTop: 25,
+    borderTopWidth: 0.6,
+    borderColor: "#eee",
+    paddingTop: 20,
+  },
+  previewTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 10,
+    color: "#333",
   },
 });
