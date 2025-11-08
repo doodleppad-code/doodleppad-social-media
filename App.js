@@ -13,6 +13,9 @@ import ChatScreen from "./src/ChatScreen"
 import SignUp from "./src/signup"
 import ChatList from "./src/ChatList"
 import DoodlePad from "./src/Doodlepad" 
+import Profile from "./src/Profile" 
+import SearchScreen from "./src/SearchScreen" 
+import NotificationScreen from "./src/NotificationScreen" 
 
 
 // Initialize Firebase
@@ -68,6 +71,18 @@ export default function App() {
       <Stack.Screen
         name="Doodlepad"
         component={DoodlePad}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="Profile"
+        component={Profile}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="SearchScreen"
+        component={SearchScreen}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="NotificationScreen"
+        component={NotificationScreen}
         options={{ headerShown: false }} />
     </Stack.Navigator>
       </NavigationContainer>
