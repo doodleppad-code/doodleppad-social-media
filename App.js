@@ -14,6 +14,7 @@ import SignUp from "./src/signup"
 import ChatList from "./src/ChatList"
 import DoodlePad from "./src/Doodlepad" 
 import Imagepost from "./src/Imagepost"
+import Audiopost from "./src/Audiopost"
 
 
 const Stack = createStackNavigator();
@@ -71,6 +72,10 @@ export default function App() {
      <Stack.Screen
       name="ImagePost"
       component={Imagepost}
+        options={{ headerShown: false }} />
+           <Stack.Screen
+      name="AudioPost"
+      component={Audiopost}
         options={{ headerShown: false }} />
     </Stack.Navigator>
       </NavigationContainer>

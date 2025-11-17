@@ -3,7 +3,8 @@
     "name": "doodelpad_app",
     "slug": "doodelpad_app",
     "plugins": [
-      "react-native-edge-to-edge"
+      "react-native-edge-to-edge",
+      "expo-av"
     ],
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,7 +17,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "We need access to your microphone to record and upload audio posts."
+      }
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -25,7 +29,14 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.socialapp.doodelpad_app"
+      "package": "com.socialapp.doodelpad_app",
+      "permissions": [
+        "INTERNET",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,3 +48,5 @@
     }
   }
 }
+
+

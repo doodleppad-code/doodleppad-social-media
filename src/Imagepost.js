@@ -107,13 +107,40 @@ export default function ImagePost() {
       setCaption("");
       setImageUri(null);
       setVideoUri(null);
-    } catch (error) {
-      console.error("Upload failed:", error);
-      Alert.alert("❌ Upload failed", error.message);
-    } finally {
-      setUploading(false);
+    
+
+    //  Send metadata to your backend API
+    const apiResponse = await fetch("https://mobserv-0din.onrender.com/api/posts/upload-post", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "Aditya", // replace with logged-in user or context
+        caption: caption.trim(),
+        url: downloadURL || publicUrl,
+        type:"imag_post"
+      }),
+    });
+
+    if (!apiResponse.ok) {
+      throw new Error(`API Error: ${apiResponse.status}`);
     }
-  };
+
+    const result = await apiResponse.json();
+    console.log("Post saved to DB:", result);
+
+    Alert.alert("✅ Post Created!", "Your post has been published.");
+    setCaption("");
+    setImageUri(null);
+    setVideoUri(null);
+  } catch (error) {
+    console.error("Upload failed:", error);
+    Alert.alert("❌ Upload failed", error.message);
+  } finally {
+    setUploading(false);
+  }
+};
 
   return (
 
