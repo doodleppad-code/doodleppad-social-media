@@ -86,7 +86,7 @@ export default function App() {
         <Stack.Screen
         name="ProfileUI"
         component={ProfileUI}
-    
+     options={{ headerShown: false }}/>
      <Stack.Screen
       name="ImagePost"
       component={Imagepost}
