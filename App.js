@@ -17,10 +17,8 @@ import Profile from "./src/Profile"
 import ProfileUI from "./src/ProfileUI" 
 import SearchScreen from "./src/SearchScreen" 
 import NotificationScreen from "./src/NotificationScreen" 
+import Imagepost from "./src/Imagepost"
 
-
-// Initialize Firebase
-import '@react-native-firebase/app';
 
 const Stack = createStackNavigator();
 
@@ -88,6 +86,10 @@ export default function App() {
         <Stack.Screen
         name="ProfileUI"
         component={ProfileUI}
+    
+     <Stack.Screen
+      name="ImagePost"
+      component={Imagepost}
         options={{ headerShown: false }} />
     </Stack.Navigator>
       </NavigationContainer>

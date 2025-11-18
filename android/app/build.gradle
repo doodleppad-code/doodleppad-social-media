@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.adityasohagpure.doodelpad_app'
+    namespace 'com.socialapp.doodelpad_app'
     defaultConfig {
-        applicationId 'com.adityasohagpure.doodelpad_app'
+        applicationId 'com.socialapp.doodelpad_app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,4 +1,4 @@
-package com.adityasohagpure.doodelpad_app
+package com.socialapp.doodelpad_app
 
 import android.os.Build
 import android.os.Bundle

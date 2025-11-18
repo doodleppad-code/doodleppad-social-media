@@ -11,7 +11,21 @@ import {
   StatusBar
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import auth from '@react-native-firebase/auth';
+
+// Native Firebase auth removed — provide a safe stub to avoid requiring the native plugin.
+const auth = (() => {
+  const impl = {
+    onAuthStateChanged: () => () => {},
+    signInWithPhoneNumber: async () => { throw new Error('Native Firebase auth not installed'); },
+    signInWithCredential: async () => { throw new Error('Native Firebase auth not installed'); },
+  };
+  impl.PhoneAuthProvider = {
+    credential: () => { throw new Error('Native Firebase auth not installed'); }
+  };
+  const fn = () => impl;
+  Object.assign(fn, impl);
+  return fn;
+})();
 import { Ionicons } from '@expo/vector-icons';
 
 // Try to import LinearGradient, fallback to View if not available
@@ -73,10 +87,12 @@ export default function Otp({ route }) {
 
     setLoading(true);
     try {
-      const credential = auth.PhoneAuthProvider.credential(verificationId, otpString);
-      await auth().signInWithCredential(credential);
-      Alert.alert('Success', 'OTP verified successfully!');
-      navigation.navigate('Dashboard');
+        // Native Firebase auth is not installed in this build. Notify user/developer.
+        Alert.alert('Unavailable', 'Native Firebase OTP verification is not available.');
+        // If native auth were present, we would create credential and sign-in here.
+        // const credential = auth.PhoneAuthProvider.credential(verificationId, otpString);
+        // await auth().signInWithCredential(credential);
+        // navigation.navigate('Dashboard');
     } catch (error) {
       const message = error?.code === 'auth/invalid-verification-code' ? 'Invalid OTP. Please try again.' : 'Failed to verify OTP. Please try again.';
       Alert.alert('Error', message);
@@ -91,15 +107,8 @@ export default function Otp({ route }) {
     setTimer(30);
     setCanResend(false);
     setOtp(['', '', '', '', '', '']);
-    try {
-      const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
-      setVerificationId(confirmation.verificationId);
-      Alert.alert('Success', 'OTP resent successfully!');
-      // Focus first input
-      inputs.current[0] && inputs.current[0].focus();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to resend OTP. Please try again later.');
-    }
+    // Native Firebase not present — inform the user/developer.
+    Alert.alert('Unavailable', 'Native Firebase OTP resend is not available in this build.');
   };
 
   const handleBack = () => {
