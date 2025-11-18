@@ -17,7 +17,7 @@ const Dashboard = ({ navigation }) => {
       <View style={styles.header}>
         <View style={styles.leftSection}>         
           <TouchableOpacity style={styles.circle}
-           onPress={() => navigation.navigate("Profile")}>
+           onPress={() => navigation.navigate("ProfileUI")}>
             <Text style={styles.circleText}>A</Text>
           </TouchableOpacity>
 

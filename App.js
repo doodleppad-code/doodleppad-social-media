@@ -14,6 +14,7 @@ import SignUp from "./src/signup"
 import ChatList from "./src/ChatList"
 import DoodlePad from "./src/Doodlepad" 
 import Profile from "./src/Profile" 
+import ProfileUI from "./src/ProfileUI" 
 import SearchScreen from "./src/SearchScreen" 
 import NotificationScreen from "./src/NotificationScreen" 
 
@@ -83,6 +84,10 @@ export default function App() {
         <Stack.Screen
         name="NotificationScreen"
         component={NotificationScreen}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="ProfileUI"
+        component={ProfileUI}
         options={{ headerShown: false }} />
     </Stack.Navigator>
       </NavigationContainer>
