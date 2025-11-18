@@ -63,7 +63,9 @@ const handleSignUp = async () => {
       data = JSON.parse(text); // Try to parse JSON
     } catch (e) {
       console.warn("⚠️ Non-JSON response from server:", text);
-      throw new Error("Unexpected server response");
+      setLoading(false);
+      Alert.alert("Error", "Server error. Please try again later.");
+      return;
     }
 
     setLoading(false);

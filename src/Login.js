@@ -31,7 +31,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const response = await fetch("https://mobserv-0din.onrender.com/login", {
+      const response = await fetch("https://mobserv-0din.onrender.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

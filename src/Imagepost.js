@@ -127,7 +127,15 @@ export default function ImagePost() {
       throw new Error(`API Error: ${apiResponse.status}`);
     }
 
-    const result = await apiResponse.json();
+    let result;
+    try {
+      result = await apiResponse.json();
+    } catch (e) {
+      const text = await apiResponse.text();
+      console.warn("⚠️ Non-JSON response from server:", text);
+      Alert.alert("Error", "Server error. Please try again later.");
+      return;
+    }
     console.log("Post saved to DB:", result);
 
     Alert.alert("✅ Post Created!", "Your post has been published.");
