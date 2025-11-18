@@ -18,6 +18,7 @@ import ProfileUI from "./src/ProfileUI"
 import SearchScreen from "./src/SearchScreen" 
 import NotificationScreen from "./src/NotificationScreen" 
 import Imagepost from "./src/Imagepost"
+import Audiopost from "./src/Audiopost"
 
 
 const Stack = createStackNavigator();
@@ -90,6 +91,10 @@ export default function App() {
      <Stack.Screen
       name="ImagePost"
       component={Imagepost}
+        options={{ headerShown: false }} />
+           <Stack.Screen
+      name="AudioPost"
+      component={Audiopost}
         options={{ headerShown: false }} />
     </Stack.Navigator>
       </NavigationContainer>

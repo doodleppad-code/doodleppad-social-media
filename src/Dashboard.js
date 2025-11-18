@@ -54,7 +54,9 @@ const Dashboard = ({ navigation }) => {
       <Ionicons name="image-outline" size={22} color="#fff" />
       <Text style={styles.optionText}>Image</Text>
     </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton}>
+            <TouchableOpacity style={styles.optionButton}
+             onPress={() => navigation.navigate('AudioPost')}
+            >
               <Ionicons name="mic-outline" size={20} color="#fff" />
               <Text style={styles.optionText}>Audio</Text>
             </TouchableOpacity>
