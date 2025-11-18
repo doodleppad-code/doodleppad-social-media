@@ -15,8 +15,9 @@ const Dashboard = ({ navigation }) => {
     <View style={styles.screen}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.leftSection}>
-          <TouchableOpacity style={styles.circle}>
+        <View style={styles.leftSection}>         
+          <TouchableOpacity style={styles.circle}
+           onPress={() => navigation.navigate("ProfileUI")}>
             <Text style={styles.circleText}>A</Text>
           </TouchableOpacity>
 
@@ -28,10 +29,12 @@ const Dashboard = ({ navigation }) => {
         <Text style={styles.title}>Doodle Pad</Text>
 
         <View style={styles.rightSection}>
-          <TouchableOpacity>
+          <TouchableOpacity
+           onPress={() => navigation.navigate("SearchScreen")}>
             <Feather name="search" size={23} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+          onPress={() => navigation.navigate("NotificationScreen")}>
             <Ionicons name="notifications-outline" size={25} color="black" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleMailPress}>

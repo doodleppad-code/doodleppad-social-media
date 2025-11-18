@@ -13,6 +13,10 @@ import ChatScreen from "./src/ChatScreen"
 import SignUp from "./src/signup"
 import ChatList from "./src/ChatList"
 import DoodlePad from "./src/Doodlepad" 
+import Profile from "./src/Profile" 
+import ProfileUI from "./src/ProfileUI" 
+import SearchScreen from "./src/SearchScreen" 
+import NotificationScreen from "./src/NotificationScreen" 
 import Imagepost from "./src/Imagepost"
 
 
@@ -67,6 +71,21 @@ export default function App() {
         name="Doodlepad"
         component={DoodlePad}
         options={{ headerShown: false }} />
+        <Stack.Screen
+        name="Profile"
+        component={Profile}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="SearchScreen"
+        component={SearchScreen}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="NotificationScreen"
+        component={NotificationScreen}
+        options={{ headerShown: false }} />
+        <Stack.Screen
+        name="ProfileUI"
+        component={ProfileUI}
     
      <Stack.Screen
       name="ImagePost"
