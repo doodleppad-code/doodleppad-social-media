@@ -119,7 +119,7 @@ export default function ImagePost() {
         username: "Aditya", // replace with logged-in user or context
         caption: caption.trim(),
         url: downloadURL || publicUrl,
-        type:"imag_post"
+        type:"image_post"
       }),
     });
 

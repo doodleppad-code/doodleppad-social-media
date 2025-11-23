@@ -1,103 +1,29 @@
 
-import "react-native-gesture-handler"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import React from "react"
-import { NavigationContainer } from "@react-navigation/native"
-import { createStackNavigator } from "@react-navigation/stack"
-import Login from "./src/Login"
-import PhoneAuth from "./src/PhoneAuth"
-import Otp from "./src/Otp"
-import Details from "./src/Details"
-import Dashboard from "./src/Dashboard"
-import ChatScreen from "./src/ChatScreen"
-import SignUp from "./src/signup"
-import ChatList from "./src/ChatList"
-import DoodlePad from "./src/Doodlepad" 
-import Profile from "./src/Profile" 
-import ProfileUI from "./src/ProfileUI" 
-import SearchScreen from "./src/SearchScreen" 
-import NotificationScreen from "./src/NotificationScreen" 
-import Imagepost from "./src/Imagepost"
-import Audiopost from "./src/Audiopost"
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { AuthProvider, useAuth } from './src/AuthContext';
+import AuthStack from './src/navigation/AuthStack'; // Login/Signup
+import AppStack from './src/navigation/AppStack';   // Dashboard, ImagePost, etc.
+import { ActivityIndicator, View } from 'react-native';
 
+function RootNavigator() {
+  const { user, loading } = useAuth();
 
-const Stack = createStackNavigator();
+  if (loading) {
+    return (
+      <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return <NavigationContainer>{user ? <AppStack /> : <AuthStack />}</NavigationContainer>;
+}
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
-
-      <Stack.Screen
-
-        name="Login"
-
-        component={Login}
-
-        options={{ headerShown: false }} />
-        <Stack.Screen
-        name="PhoneAuth"
-        component={PhoneAuth}
-        options={{ headerShown: false }} />
-        <Stack.Screen
-        name="Otp"
-        component={Otp}
-        options={{ headerShown: false }} /> 
-      <Stack.Screen
-        name="Detail"
-        component={Details}
-        options={{ headerShown: false }} />
-
-      <Stack.Screen
-        name="Dashboard"
-        component={Dashboard}
-        options={{ headerShown: false }} />
-
-      <Stack.Screen
-        name="ChatList"
-        component={ChatList}
-        options={{ headerShown: false }} />
-
-      <Stack.Screen
-        name="ChatScreen"
-        component={ChatScreen}
-        options={{ headerShown: false }} />
-        
-      <Stack.Screen
-        name="SignUp"
-        component={SignUp}
-        options={{ headerShown: false }} />
-      <Stack.Screen
-        name="Doodlepad"
-        component={DoodlePad}
-        options={{ headerShown: false }} />
-        <Stack.Screen
-        name="Profile"
-        component={Profile}
-        options={{ headerShown: false }} />
-        <Stack.Screen
-        name="SearchScreen"
-        component={SearchScreen}
-        options={{ headerShown: false }} />
-        <Stack.Screen
-        name="NotificationScreen"
-        component={NotificationScreen}
-        options={{ headerShown: false }} />
-        <Stack.Screen
-        name="ProfileUI"
-        component={ProfileUI}
-    
-     <Stack.Screen
-      name="ImagePost"
-      component={Imagepost}
-        options={{ headerShown: false }} />
-           <Stack.Screen
-      name="AudioPost"
-      component={Audiopost}
-        options={{ headerShown: false }} />
-    </Stack.Navigator>
-      </NavigationContainer>
-    </GestureHandlerRootView>
+    <AuthProvider>
+      <RootNavigator />
+    </AuthProvider>
   );
 }

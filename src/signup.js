@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import CheckBox from "@react-native-community/checkbox";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from './AuthContext';
 
 const SignUp = ({ navigation }) => {
   const [firstName, setFirstName] = useState("");
@@ -22,6 +23,7 @@ const SignUp = ({ navigation }) => {
   const [showRePassword, setShowRePassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { signIn } = useAuth();
 
   // ====== API call to backend ====
 const handleSignUp = async () => {
@@ -72,7 +74,13 @@ const handleSignUp = async () => {
 
     if (response.ok) {
       Alert.alert("Success", "Signup successful!");
-      navigation.navigate("Login");
+      // if server returned user and token, sign in automatically
+      if (data.user) {
+        const userObj = { id: data.user?.id || data.user?._id || null, username: data.user?.name || data.user?.username || data.user?.email, token: data.token || null };
+        await signIn(userObj);
+      } else {
+        navigation.navigate("Login");
+      }
     } else {
       Alert.alert("Error", data.error || "Signup failed");
     }
