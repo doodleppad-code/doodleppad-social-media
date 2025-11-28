@@ -20,6 +20,7 @@ import { createClient } from "@supabase/supabase-js";
 import * as FileSystem from "expo-file-system";
 import "react-native-url-polyfill/auto";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from './AuthContext';
 
 // 📦 Supabase credentials
 const supabaseUrl = "https://rnivpbqqihdwtunlihnp.supabase.co";
@@ -31,6 +32,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const { width } = Dimensions.get("window");
 
 export default function ImagePost() {
+  const { user } = useAuth();
   const [caption, setCaption] = useState("");
   const [imageUri, setImageUri] = useState(null);
   const [videoUri, setVideoUri] = useState(null);
@@ -116,10 +118,10 @@ export default function ImagePost() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        username: "Aditya", // replace with logged-in user or context
+        userid: user?.id || user?._id || user?.userid || "anonymous",
         caption: caption.trim(),
         url: downloadURL || publicUrl,
-        type:"image_post"
+        type: "image_post",
       }),
     });
 

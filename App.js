@@ -7,7 +7,18 @@ import AppStack from './src/navigation/AppStack';   // Dashboard, ImagePost, etc
 import { ActivityIndicator, View } from 'react-native';
 
 function RootNavigator() {
-  const { user, loading } = useAuth();
+  const auth = useAuth();
+
+  // If context is not available yet, show a loader to avoid destructuring undefined
+  if (!auth) {
+    return (
+      <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  const { user, loading } = auth;
 
   if (loading) {
     return (

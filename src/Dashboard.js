@@ -10,21 +10,60 @@ import {
 } from "react-native";
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { Video } from "expo-av";
+import { useAuth } from './AuthContext';
 
 const Dashboard = ({ navigation }) => {
   const [open, setOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🌐 Fetch All Posts
+  const { user } = useAuth();
+  const USER_ID = user?.id || user?._id || user?.userid || "Aditya";
+
+const handleLike = async (postId) => {
+  try {
+    console.log("➡ Sending Like Request for:", postId);
+
+    const response = await fetch(
+      `https://mobserv-0din.onrender.com/api/posts/${postId}/like`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userid: USER_ID }),
+      }
+    );
+
+    const raw = await response.text();
+    console.log("⬅ Response Raw:", raw);
+
+    if (!response.ok) {
+      console.log("❌ Server Error:", response.status);
+      return;
+    }
+
+    const data = JSON.parse(raw);
+    console.log("🔥 Parsed Data:", data);
+
+    // UI update
+    setPosts((prev) =>
+      prev.map((post) =>
+        (post.postId || post._id) === postId
+          ? { ...post, likes: data.likedBy }
+          : post
+      )
+    );
+  } catch (error) {
+    console.log("❌ Like Error:", error);
+  }
+};
+
   const fetchAllPosts = async () => {
     try {
-      const response = await fetch(
-        "https://mobserv-0din.onrender.com/api/posts"
-      );
+      const response = await fetch("https://mobserv-0din.onrender.com/api/posts");
       const raw = await response.text();
       const data = JSON.parse(raw);
 
+      // because backend returns { message, count, posts: [...] }
       setPosts(data.posts || []);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -38,53 +77,93 @@ const Dashboard = ({ navigation }) => {
   }, []);
 
   const handleMailPress = () => {
-    navigation.navigate("ChatList");
+    // navigate to a mail/compose screen if exists, otherwise log
+    if (navigation && navigation.navigate) navigation.navigate("Mail");
+    else console.log("Mail pressed");
   };
 
-  // 🔥 Render Each Post (Single Column)
-  const renderPost = ({ item }) => (
-    <View style={styles.postCard}>
-      
-      {/* Username */}
-      <View style={styles.userRow}>
-        <View style={styles.userCircle}>
-          <Text style={styles.userLetter}>{item.username[0]}</Text>
+  const renderPost = ({ item }) => {
+    if (!item) return null;
+
+    const postId = item.postId || item._id;
+
+    return (
+      <View style={styles.postCard}>
+
+        {/* Username Row */}
+        <View style={styles.userRow}>
+          <View style={styles.userCircle}>
+            {/* Safe username first letter */}
+            <Text style={styles.userLetter}>
+              {item?.username?.[0] || "U"}
+            </Text>
+          </View>
+
+          {/* Safe full username */}
+          <Text style={styles.usernameText}>
+            {item?.username || "Unknown User"}
+          </Text>
         </View>
-        <Text style={styles.usernameText}>{item.username}</Text>
+
+        {/* Media */}
+        {item?.type === "image_post" && (
+          <Image source={{ uri: item?.url }} style={styles.postImage} />
+        )}
+
+        {item?.type === "video_post" && (
+          <Video
+            source={{ uri: item?.url }}
+            style={styles.postImage}
+            useNativeControls
+            resizeMode="contain"
+          />
+        )}
+
+        {item?.type === "audio_post" && (
+          <View style={styles.audioBox}>
+            <Ionicons name="musical-notes-outline" size={22} color="#000" />
+            <Text>Audio Post</Text>
+          </View>
+        )}
+
+        {/* Caption */}
+        {!!item?.caption && (
+          <Text style={styles.caption}>{item.caption}</Text>
+        )}
+
+        <View style={styles.bottomActions}>
+
+          {/* ❤️ Like Button */}
+          <TouchableOpacity
+            style={styles.likeRow}
+            onPress={() => handleLike(postId)}
+          >
+            <Ionicons
+              name={(item?.likes || []).includes(USER_ID) ? "heart" : "heart-outline"}
+              size={26}
+              color={(item?.likes || []).includes(USER_ID) ? "red" : "#333"}
+            />
+            <Text style={styles.actionText}>
+              {item?.likes?.length || 0}
+            </Text>
+          </TouchableOpacity>
+
+          {/* 💬 Comment Button */}
+          <TouchableOpacity
+            style={styles.commentRow}
+            onPress={() =>
+              navigation.navigate("CommentsScreen", { postId })
+            }
+          >
+            <Ionicons name="chatbubble-outline" size={24} color="#333" />
+            <Text style={styles.actionText}>Comments</Text>
+          </TouchableOpacity>
+
+        </View>
       </View>
+    );
+  };
 
-      {/* Media */}
-      {item.type === "imag_post" && (
-        <Image source={{ uri: item.url }} style={styles.postImage} />
-      )}
-
-      {item.type === "video_post" && (
-        <Video
-          source={{ uri: item.url }}
-          style={styles.postImage}
-          useNativeControls
-          resizeMode="contain"
-        />
-      )}
-
-      {item.type === "audio_post" && (
-        <View style={styles.audioBox}>
-          <Ionicons name="musical-notes-outline" size={22} color="#000" />
-          <Text>Audio Post (tap to play in AudioPost screen)</Text>
-        </View>
-      )}
-
-      {/* Caption */}
-      {item.caption !== "" && (
-        <Text style={styles.caption}>{item.caption}</Text>
-      )}
-
-      {/* Date */}
-      <Text style={styles.date}>
-        {item.date?.slice(0, 10)} · {item.type.toUpperCase()}
-      </Text>
-    </View>
-  );
 
   return (
     <View style={styles.screen}>
@@ -99,9 +178,7 @@ const Dashboard = ({ navigation }) => {
             <Text style={styles.circleText}>A</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity>
-            <Ionicons name="home" size={26} color="black" />
-          </TouchableOpacity>
+         
         </View>
 
         <Text style={styles.title}>Doodle Pad</Text>

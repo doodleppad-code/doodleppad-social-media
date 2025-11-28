@@ -11,19 +11,29 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from './AuthContext';
 
 const Profile = () => {
   const [selectedTab, setSelectedTab] = useState("Saved");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const username = "Aditya"; // Replace with logged-in username or from auth context
+  const { user } = useAuth();
+  const username = user?.username || user?.id || ""; // logged-in username (fallback empty)
 
   // 🔥 Fetch user posts
- const fetchPosts = async () => {
+ const fetchPosts = async (uname) => {
+  const unameToUse = uname || username;
   try {
     setLoading(true);
 
-    const URL = `https://mobserv-0din.onrender.com/api/posts/user/${username}`;
+    if (!unameToUse) {
+      // No user available yet
+      setPosts([]);
+      setLoading(false);
+      return;
+    }
+
+    const URL = `https://mobserv-0din.onrender.com/api/posts/user/${encodeURIComponent(unameToUse)}`;
     console.log("🔗 Fetching:", URL);
 
     const response = await fetch(URL);
@@ -32,9 +42,14 @@ const Profile = () => {
 
     if (!response.ok) throw new Error("Failed to load posts");
 
-    const data = JSON.parse(raw);
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      console.warn('Non-JSON response for posts:', raw);
+      throw e;
+    }
 
-    // FIX HERE:
     setPosts(data.posts || []);
 
   } catch (error) {
@@ -47,8 +62,13 @@ const Profile = () => {
 
 
   useEffect(() => {
+    // fetch when component mounts and whenever the user changes
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    if (user) fetchPosts(user.username || user.id);
+  }, [user]);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -74,8 +94,8 @@ const Profile = () => {
           source={require("../assets/images.jpeg")} // Replace with dynamic user image
           style={styles.profileImage}
         />
-        <Text style={styles.profileName}>Vru Thakare</Text>
-        <Text style={styles.username}>@{username.toLowerCase()}</Text>
+        <Text style={styles.profileName}>{user?.username || 'User'}</Text>
+        <Text style={styles.username}>@{(username || 'guest').toLowerCase()}</Text>
         <Text style={styles.followText}>10 followers · 50 following</Text>
       </View>
 
