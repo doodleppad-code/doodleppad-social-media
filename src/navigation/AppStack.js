@@ -11,6 +11,7 @@ import SearchScreen from '../SearchScreen';
 import NotificationScreen from '../NotificationScreen';
 import Imagepost from '../Imagepost';
 import Audiopost from '../Audiopost';
+import CommentsScreen from '../CommentsScreen';
 
 const Stack = createStackNavigator();
 
@@ -53,6 +54,8 @@ export default function AppStack() {
       <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
       <Stack.Screen name="ImagePost" component={Imagepost} />
       <Stack.Screen name="AudioPost" component={Audiopost} />
+      <Stack.Screen name="CommentsScreen" component={CommentsScreen} />
+
     </Stack.Navigator>
   );
 }
