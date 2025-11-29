@@ -15,6 +15,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import { createClient } from "@supabase/supabase-js";
 import "react-native-url-polyfill/auto";
+import { useAuth } from './AuthContext';
 import { InteractionManager } from "react-native";
 // Supabase setup
 const supabaseUrl = "https://rnivpbqqihdwtunlihnp.supabase.co";
@@ -23,6 +24,7 @@ const supabaseAnonKey =
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function AudioPost() {
+  const { user } = useAuth();
   const [recording, setRecording] = useState(null);
   const [recordingUri, setRecordingUri] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -172,12 +174,12 @@ useEffect(() => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            username: "Aditya", // replace with logged-in user or context
-            caption: caption.trim(),
-            url: downloadURL || publicUrl,
-            type:"imag_post"
-          }),
+              body: JSON.stringify({
+                userid: user?.id || user?._id || user?.userid || 'anonymous',
+                caption: caption?.trim ? caption.trim() : '',
+                url: downloadURL || publicUrl,
+                type: "audio_post",
+              }),
         });
     
         if (!apiResponse.ok) {

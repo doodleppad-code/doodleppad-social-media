@@ -10,10 +10,12 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from './AuthContext';
 import { Ionicons } from "@expo/vector-icons"; // ✅ import missing icon
 
 export default function Login() {
   const navigation = useNavigation();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,9 @@ export default function Login() {
 
       Alert.alert("Success", "Login successful!");
       console.log("User:", data.user);
-      navigation.navigate("Dashboard", { user: data.user });
+      // persist user in context and let root navigator switch stacks
+      const userObj = { id: data.user?.id || data.user?._id || null, username: data.user?.name || data.user?.username || data.user?.email, token: data.token || null };
+      await signIn(userObj);
     } catch (err) {
       setLoading(false);
       Alert.alert("Error", "Unable to connect to server");
