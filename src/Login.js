@@ -50,8 +50,12 @@ export default function Login() {
       Alert.alert("Success", "Login successful!");
       console.log("User:", data.user);
       // persist user in context and let root navigator switch stacks
-      const userObj = { id: data.user?.id || data.user?._id || null, username: data.user?.name || data.user?.username || data.user?.email, token: data.token || null };
-      await signIn(userObj);
+     const userObj = {
+  userId: data.user.userId,     // ✅ required
+  username: data.user.username,
+  email: data.user.email
+}; 
+  await signIn(userObj);
     } catch (err) {
       setLoading(false);
       Alert.alert("Error", "Unable to connect to server");
