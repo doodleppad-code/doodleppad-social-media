@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,26 +7,51 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 const Profile = () => {
   const [selectedTab, setSelectedTab] = useState("Saved");
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const username = "Vru"; // Replace with logged-in username or from auth context
 
-  const pins = [
-    { id: "1", title: "All Pins", img: require("../assets/cat.jpeg"), count: "5 Pins", time: "2d ago" },
-    { id: "2", title: "Day", img: require("../assets/Happy-Monday.webp"), count: "14 Pins", time: "2mo" },
-    { id: "3", title: "Nature", img: require("../assets/photo-nature.jpeg"), count: "3 Pins", time: "3mo" },
-    { id: "4", title: "Men", img: require("../assets/Stylish-Boy.webp"), count: "1 Pin", time: "2d ago" },
-  ];
+  // 🔥 Fetch user posts
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `https://mobserv-0din.onrender.com/api/posts/user/?username=${username}`
+      );
+
+      if (!response.ok) throw new Error("Failed to load posts");
+      const data = await response.json();
+      setPosts(data);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("❌ Error", "Unable to fetch your posts.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <Image source={item.img} style={styles.cardImage} />
+      <Image
+        source={{ uri: item.url }}
+        style={styles.cardImage}
+        resizeMode="cover"
+      />
       <View style={styles.cardDetails}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
+        <Text style={styles.cardTitle}>{item.caption || "Untitled"}</Text>
         <Text style={styles.cardSubtitle}>
-          {item.count} · {item.time}
+          {item.type?.toUpperCase() || "POST"} · {item.createdAt?.slice(0, 10)}
         </Text>
       </View>
     </View>
@@ -37,11 +62,11 @@ const Profile = () => {
       {/* Profile Header */}
       <View style={styles.profileSection}>
         <Image
-          source={require("../assets/images.jpeg")} // Replace with your profile image
+          source={require("../assets/images.jpeg")} // Replace with dynamic user image
           style={styles.profileImage}
         />
         <Text style={styles.profileName}>Vru Thakare</Text>
-        <Text style={styles.username}>@aeru</Text>
+        <Text style={styles.username}>@{username.toLowerCase()}</Text>
         <Text style={styles.followText}>10 followers · 50 following</Text>
       </View>
 
@@ -83,16 +108,25 @@ const Profile = () => {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={pins}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        ListHeaderComponent={ListHeader}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.grid}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+      ) : (
+        <FlatList
+          data={posts}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.postId || item._id}
+          numColumns={2}
+          ListHeaderComponent={ListHeader}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.grid}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <Text style={{ textAlign: "center", color: "#555", marginTop: 20 }}>
+              No posts yet.
+            </Text>
+          }
+        />
+      )}
     </View>
   );
 };
@@ -100,7 +134,7 @@ const Profile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffffff",
+    backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingTop: 40,
   },
@@ -115,16 +149,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   profileName: {
-    color: "#000000ff",
+    color: "#000",
     fontSize: 20,
     fontWeight: "600",
   },
   username: {
-    color: "#000000ff",
+    color: "#000",
     fontSize: 14,
   },
   followText: {
-    color: "#000000ff",
+    color: "#000",
     marginTop: 4,
     fontSize: 13,
   },
@@ -142,19 +176,19 @@ const styles = StyleSheet.create({
   activeTab: {
     color: "#2c2c2c",
     borderBottomWidth: 2,
-    borderBottomColor: "#000000ff",
+    borderBottomColor: "#000",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#aaa",
+    backgroundColor: "#f0f0f0",
     borderRadius: 12,
     paddingHorizontal: 10,
     marginVertical: 12,
   },
   searchInput: {
     flex: 1,
-    color: "#000000ff",
+    color: "#000",
     padding: 8,
   },
   grid: {
@@ -164,7 +198,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   card: {
-    backgroundColor: "#9e9d9dff",
+    backgroundColor: "#f9f9f9",
     borderRadius: 14,
     overflow: "hidden",
     marginBottom: 16,
@@ -172,7 +206,7 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     width: "100%",
-    height: 100,
+    height: 120,
     borderTopLeftRadius: 14,
     borderTopRightRadius: 14,
   },
@@ -180,12 +214,12 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   cardTitle: {
-    color: "#161616ff",
+    color: "#161616",
     fontWeight: "600",
     fontSize: 15,
   },
   cardSubtitle: {
-    color: "#161616ff",
+    color: "#555",
     fontSize: 12,
     marginTop: 3,
   },

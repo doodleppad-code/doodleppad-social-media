@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,45 +6,95 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "./AuthContext";
 
-const notifications = [
-  {
-    id: 1,
-    name: "Stephen",
-    message: "has like your video",
-    time: "2h ago",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
-    highlight: true,
-  },
-  {
-    id: 2,
-    name: "Stephen",
-    message: "has like your video",
-    time: "2h ago",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
-  },
-  {
-    id: 3,
-    name: "Stephen",
-    message: "has like your video",
-    time: "2h ago",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
-  },
-  {
-    id: 4,
-    name: "Stephen",
-    message: "post will disappear in 1 hour",
-    extra: "Would you like to pin it?",
-    time: "2h ago",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
-    actions: true,
-  },
-];
+const FRIEND_API = "https://mobserv-0din.onrender.com/api/friends";
 
 export default function NotificationScreen({ navigation }) {
   const [selectedTab, setSelectedTab] = useState("Notifications");
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const { user } = useAuth();
+console.log("AUTH USER:", user);
+
+  // ======================================================
+  // LOAD INCOMING FRIEND REQUESTS
+  // ======================================================
+  const fetchRequests = async () => {
+    try {
+      if (!user?.userId) return;
+
+      setLoading(true);
+
+      const res = await fetch(`${FRIEND_API}/incoming/${user.userId}`);
+      const data = await res.json();
+
+      if (data.requests) {
+        setRequests(data.requests);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.log("Error fetching requests:", err);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, [selectedTab]); // reload when switching tabs
+
+  // ======================================================
+  // ACCEPT FRIEND REQUEST
+  // ======================================================
+  const acceptRequest = async (fromUserId) => {
+    try {
+      const res = await fetch(`${FRIEND_API}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentUserId: user.userId,
+          fromUserId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.message) {
+        setRequests(requests.filter((r) => r.userId !== fromUserId));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // ======================================================
+  // REJECT FRIEND REQUEST
+  // ======================================================
+  const rejectRequest = async (fromUserId) => {
+    try {
+      const res = await fetch(`${FRIEND_API}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentUserId: user.userId,
+          fromUserId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.message) {
+        setRequests(requests.filter((r) => r.userId !== fromUserId));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -53,7 +103,7 @@ export default function NotificationScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerText}>username</Text>
+        <Text style={styles.headerText}>Notifications</Text>
       </View>
 
       {/* Tabs */}
@@ -70,7 +120,7 @@ export default function NotificationScreen({ navigation }) {
         </TouchableOpacity>
 
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>2</Text>
+          <Text style={styles.badgeText}>{requests.length}</Text>
         </View>
 
         <TouchableOpacity onPress={() => setSelectedTab("Request")}>
@@ -85,43 +135,70 @@ export default function NotificationScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Notifications List */}
+      {/* CONTENT */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {notifications.map((item) => (
-          <View
-            key={item.id}
-            style={[
-              styles.card,
-              item.highlight && { backgroundColor: "#ffecec" },
-            ]}
-          >
-            <Image source={{ uri: item.image }} style={styles.avatar} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.message}>{item.message}</Text>
+        {/* =======================================================
+            NOTIFICATIONS TAB (STATIC)
+        ======================================================= */}
+        {selectedTab === "Notifications" && (
+          <Text style={{ textAlign: "center", marginTop: 20, color: "#888" }}>
+            No notifications yet.
+          </Text>
+        )}
 
-              {item.extra && (
-                <>
-                  <Text style={styles.message}>{item.extra}</Text>
-                  <View style={styles.actionRow}>
-                    <Text style={styles.time}>{item.time}</Text>
-                    <View style={styles.buttons}>
-                      <Text style={styles.yes}>Yes</Text>
-                      <Text style={styles.no}>No</Text>
-                    </View>
+        {/* =======================================================
+           REQUEST TAB → SHOW FRIEND REQUESTS
+        ======================================================= */}
+        {selectedTab === "Request" && (
+          <View>
+            {loading ? (
+              <ActivityIndicator size="large" color="black" />
+            ) : requests.length === 0 ? (
+              <Text style={{ textAlign: "center", marginTop: 20, color: "#888" }}>
+                No friend requests
+              </Text>
+            ) : (
+              requests.map((item) => (
+                <View key={item.userId} style={styles.card}>
+                  <Image
+                    source={{
+                      uri: "https://randomuser.me/api/portraits/men/1.jpg",
+                    }}
+                    style={styles.avatar}
+                  />
+
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{item.username}</Text>
+                    <Text style={styles.message}>
+                      sent you a friend request
+                    </Text>
                   </View>
-                </>
-              )}
 
-              {!item.extra && <Text style={styles.time}>{item.time}</Text>}
-            </View>
+                  {/* ACTION BUTTONS */}
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      onPress={() => acceptRequest(item.userId)}
+                    >
+                      <Text style={styles.acceptBtn}>Accept</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => rejectRequest(item.userId)}
+                    >
+                      <Text style={styles.rejectBtn}>Reject</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
-        ))}
+        )}
       </ScrollView>
     </View>
   );
 }
 
+// ====================== STYLES ======================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -176,11 +253,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
+    elevation: 2,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 3,
-    elevation: 2,
   },
   avatar: {
     width: 40,
@@ -194,26 +271,17 @@ const styles = StyleSheet.create({
   message: {
     color: "#444",
   },
-  time: {
-    color: "#888",
-    fontSize: 12,
-    marginTop: 5,
-  },
-  actionRow: {
+  actionButtons: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
   },
-  buttons: {
-    flexDirection: "row",
-  },
-  yes: {
-    color: "red",
-    marginRight: 10,
+  acceptBtn: {
+    color: "#007AFF",
+    marginRight: 15,
     fontWeight: "600",
   },
-  no: {
-    color: "#000",
+  rejectBtn: {
+    color: "#FF3B30",
     fontWeight: "600",
   },
 });

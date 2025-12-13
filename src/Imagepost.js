@@ -20,6 +20,7 @@ import { createClient } from "@supabase/supabase-js";
 import * as FileSystem from "expo-file-system";
 import "react-native-url-polyfill/auto";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from './AuthContext';
 
 // 📦 Supabase credentials
 const supabaseUrl = "https://rnivpbqqihdwtunlihnp.supabase.co";
@@ -31,6 +32,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const { width } = Dimensions.get("window");
 
 export default function ImagePost() {
+  const { user } = useAuth();
   const [caption, setCaption] = useState("");
   const [imageUri, setImageUri] = useState(null);
   const [videoUri, setVideoUri] = useState(null);
@@ -107,13 +109,48 @@ export default function ImagePost() {
       setCaption("");
       setImageUri(null);
       setVideoUri(null);
-    } catch (error) {
-      console.error("Upload failed:", error);
-      Alert.alert("❌ Upload failed", error.message);
-    } finally {
-      setUploading(false);
+    
+
+    //  Send metadata to your backend API
+    const apiResponse = await fetch("https://mobserv-0din.onrender.com/api/posts/upload-post", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userid: user?.id || user?._id || user?.userid || "anonymous",
+        caption: caption.trim(),
+        url: downloadURL || publicUrl,
+        type: "image_post",
+      }),
+    });
+
+    if (!apiResponse.ok) {
+      throw new Error(`API Error: ${apiResponse.status}`);
     }
-  };
+
+    let result;
+    try {
+      result = await apiResponse.json();
+    } catch (e) {
+      const text = await apiResponse.text();
+      console.warn("⚠️ Non-JSON response from server:", text);
+      Alert.alert("Error", "Server error. Please try again later.");
+      return;
+    }
+    console.log("Post saved to DB:", result);
+
+    Alert.alert("✅ Post Created!", "Your post has been published.");
+    setCaption("");
+    setImageUri(null);
+    setVideoUri(null);
+  } catch (error) {
+    console.error("Upload failed:", error);
+    Alert.alert("❌ Upload failed", error.message);
+  } finally {
+    setUploading(false);
+  }
+};
 
   return (
 

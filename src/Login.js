@@ -10,10 +10,12 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from './AuthContext';
 import { Ionicons } from "@expo/vector-icons"; // ✅ import missing icon
 
 export default function Login() {
   const navigation = useNavigation();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,7 +33,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const response = await fetch("https://mobserv-0din.onrender.com/login", {
+      const response = await fetch("https://mobserv-0din.onrender.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -47,7 +49,13 @@ export default function Login() {
 
       Alert.alert("Success", "Login successful!");
       console.log("User:", data.user);
-      navigation.navigate("Dashboard", { user: data.user });
+      // persist user in context and let root navigator switch stacks
+     const userObj = {
+  userId: data.user.userId,     // ✅ required
+  username: data.user.username,
+  email: data.user.email
+}; 
+  await signIn(userObj);
     } catch (err) {
       setLoading(false);
       Alert.alert("Error", "Unable to connect to server");

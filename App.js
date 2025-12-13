@@ -1,29 +1,39 @@
 
-import "react-native-gesture-handler"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import React from "react"
-import { NavigationContainer } from "@react-navigation/native"
-import { createStackNavigator } from "@react-navigation/stack"
-import Login from "./src/Login"
-import PhoneAuth from "./src/PhoneAuth"
-import Otp from "./src/Otp"
-import Details from "./src/Details"
-import Dashboard from "./src/Dashboard"
-import ChatScreen from "./src/ChatScreen"
-import SignUp from "./src/signup"
-import ChatList from "./src/ChatList"
-import DoodlePad from "./src/Doodlepad" 
-import Profile from "./src/Profile" 
-import ProfileUI from "./src/ProfileUI" 
-import SearchScreen from "./src/SearchScreen" 
-import NotificationScreen from "./src/NotificationScreen" 
-import Imagepost from "./src/Imagepost"
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { AuthProvider, useAuth } from './src/AuthContext';
+import AuthStack from './src/navigation/AuthStack'; // Login/Signup
+import AppStack from './src/navigation/AppStack';   // Dashboard, ImagePost, etc.
+import { ActivityIndicator, View } from 'react-native';
 
+function RootNavigator() {
+  const auth = useAuth();
 
-const Stack = createStackNavigator();
+  // If context is not available yet, show a loader to avoid destructuring undefined
+  if (!auth) {
+    return (
+      <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  const { user, loading } = auth;
+
+  if (loading) {
+    return (
+      <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return <NavigationContainer>{user ? <AppStack /> : <AuthStack />}</NavigationContainer>;
+}
 
 export default function App() {
   return (
+<<<<<<< HEAD
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login">
@@ -94,5 +104,10 @@ export default function App() {
     </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
+=======
+    <AuthProvider>
+      <RootNavigator />
+    </AuthProvider>
+>>>>>>> af138d7b188736ea574fdb0dec19a2d413c46c12
   );
 }
