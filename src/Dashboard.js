@@ -86,6 +86,8 @@ const handleLike = async (postId) => {
     if (!item) return null;
 
     const postId = item.postId || item._id;
+console.log("IMAGE URL:", item.url);
+console.log("POST TYPE:", item.type);
 
     return (
       <View style={styles.postCard}>
@@ -95,7 +97,8 @@ const handleLike = async (postId) => {
           <View style={styles.userCircle}>
             {/* Safe username first letter */}
             <Text style={styles.userLetter}>
-              {item?.username?.[0] || "U"}
+            {(item?.username || item?.userid || "U")[0]}
+
             </Text>
           </View>
 
@@ -107,7 +110,8 @@ const handleLike = async (postId) => {
 
         {/* Media */}
         {item?.type === "image_post" && (
-          <Image source={{ uri: item?.url }} style={styles.postImage} />
+         <Image source={{ uri: item.url }} style={styles.postImage} resizeMode="cover" />
+
         )}
 
         {item?.type === "video_post" && (
@@ -338,7 +342,7 @@ const styles = StyleSheet.create({
     height: 300,
     borderRadius: 10,
     marginTop: 10,
-    backgroundColor: "#000",
+    
   },
 
   audioBox: {
