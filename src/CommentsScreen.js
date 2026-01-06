@@ -15,7 +15,7 @@ const CommentsScreen = ({ route }) => {
   const { postId } = route.params;
   const { user } = useAuth();
 
-  const USER_ID = user?.id || user?._id || user?.userid || "Guest";
+  const USER_ID = user?.userId || "Guest";
 
   const [comments, setComments] = useState([]);
   const [text, setText] = useState("");

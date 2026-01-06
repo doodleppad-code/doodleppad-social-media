@@ -53,7 +53,7 @@ const SearchScreen = ({ navigation }) => {
   // ---------- SEND FRIEND REQUEST ----------
  const sendFriendRequest = async (toUserId) => {
   try {
-const fromUserId = user?.id || user?._id || user?.userid || user?.userId;
+const fromUserId = user?.userId;
 
     if (!fromUserId) {
       Alert.alert("Not signed in", "Please sign in to send friend requests.");

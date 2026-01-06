@@ -1,203 +1,439 @@
 import React, { useState, useRef } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
-import { Canvas, Path, PaintStyle, Skia } from "@shopify/react-native-skia";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  SafeAreaView,
+  Modal,
+  PanResponder,
+   Alert,
+  
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Canvas, Path, Skia } from "@shopify/react-native-skia";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { runOnJS } from 'react-native-reanimated';
-
-export default function DoodlePad() {
+import { runOnJS } from "react-native-reanimated";
+import * as FileSystem from "expo-file-system";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "./AuthContext";
+export default function DoodlePad({ navigation }) {
+  /* ================= STATE ================= */
+  const { user } = useAuth();
   const [paths, setPaths] = useState([]);
   const [currentPath, setCurrentPath] = useState(null);
+  const [caption, setCaption] = useState("");
+  const canvasRef = useRef(null);
   const [color, setColor] = useState("#000000");
   const [strokeWidth, setStrokeWidth] = useState(5);
 
-  const COLORS = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080"];
-  const STROKES = [3, 6, 10, 15];
+  const [showColors, setShowColors] = useState(false);
+  const [showStrokeSlider, setShowStrokeSlider] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  /* ================= CONSTANTS ================= */
+  const COLORS = [
+    "#000000",
+    "#FF0000",
+    "#00C853",
+    "#2962FF",
+    "#FF6D00",
+    "#9C27B0",
+    "#795548",
+    "#FFFFFF",
+  ];
 
-  // store paths-in-progress in a Map to avoid mutating a ref object that
-  // may have been captured by reanimated worklets (which causes warnings)
-  const pathStoreRef = useRef(new Map());
-  const [currentPathId, setCurrentPathId] = useState(null);
-  const lastUpdateRef = useRef(0);
-  const [debugTouch, setDebugTouch] = useState({ x: null, y: null });
-  // Build a Skia.Path from a simple array of points on the JS thread
-  const buildSkiaPathFromPoints = (points) => {
+  const SLIDER_WIDTH = 260;
+  const MIN_STROKE = 1;
+  const MAX_STROKE = 20;
+
+  /* ================= SLIDER ================= */
+  const [sliderX, setSliderX] = useState(
+    (strokeWidth / MAX_STROKE) * SLIDER_WIDTH
+  );
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        let x = Math.max(0, Math.min(SLIDER_WIDTH, gesture.dx + sliderX));
+        setSliderX(x);
+
+        const value =
+          MIN_STROKE +
+          (x / SLIDER_WIDTH) * (MAX_STROKE - MIN_STROKE);
+
+        setStrokeWidth(Math.round(value));
+      },
+    })
+  ).current;
+
+  /* ================= DRAWING ================= */
+  const createPath = (x, y) => {
     const p = Skia.Path.Make();
-    if (!points || points.length === 0) return p;
-    p.moveTo(points[0][0], points[0][1]);
-    for (let i = 1; i < points.length; i++) {
-      p.lineTo(points[i][0], points[i][1]);
-    }
-    return p;
-  }
+    p.moveTo(x, y);
+    setCurrentPath({ path: p, color, strokeWidth });
+  };
 
-  // create a reusable stroke paint
-  // Note: we rely on Path props (style, strokeWidth, strokeJoin, strokeCap)
-  // for stroke rendering instead of passing a Paint object as a prop.
+  const updatePath = (x, y) => {
+    if (!currentPath) return;
+    currentPath.path.lineTo(x, y);
+    setCurrentPath({ ...currentPath });
+  };
 
-  const startPath = (x, y, c, sw) => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-    const cp = { points: [[x, y]], color: c, strokeWidth: sw };
-    pathStoreRef.current.set(id, cp);
-    setCurrentPathId(id);
-    setCurrentPath({ path: buildSkiaPathFromPoints(cp.points), color: c, strokeWidth: sw });
-  }
-
-  const addPointToCurrentPath = (x, y) => {
-    const id = currentPathId;
-    if (!id) return;
-    const cp = pathStoreRef.current.get(id);
-    if (!cp) return;
-    const newCp = { points: [...cp.points, [x, y]], color: cp.color, strokeWidth: cp.strokeWidth };
-    pathStoreRef.current.set(id, newCp);
-    setCurrentPath({ path: buildSkiaPathFromPoints(newCp.points), color: newCp.color, strokeWidth: newCp.strokeWidth });
-  }
-
-  const finishCurrentPath = () => {
-    const id = currentPathId;
-    if (!id) return;
-    const cp = pathStoreRef.current.get(id);
-    if (!cp) return;
-    const path = buildSkiaPathFromPoints(cp.points);
-    setPaths(prev => [...prev, { path, color: cp.color, strokeWidth: cp.strokeWidth }]);
-    // debug log: number of points and a small sample
-    try {
-      const count = cp.points.length;
-      const sample = cp.points.slice(0, Math.min(5, count)).concat(count > 5 ? ['...'] : []);
-      console.log('Finished path id=', id, 'points=', count, 'sample=', sample);
-    } catch (e) {
-      console.log('Finished path (log error)', e);
-    }
+  const endPath = () => {
+    if (!currentPath) return;
+    setPaths((prev) => [...prev, currentPath]);
     setCurrentPath(null);
-    pathStoreRef.current.delete(id);
-    setCurrentPathId(null);
-  }
+  };
 
   const panGesture = Gesture.Pan()
-    .onBegin(e => {
-      // delegate creation to JS thread
-      runOnJS(startPath)(e.x, e.y, color, strokeWidth);
-      runOnJS(setDebugTouch)({ x: Math.round(e.x), y: Math.round(e.y) });
-    })
-    .onUpdate(e => {
-      const now = Date.now();
-      if (now - lastUpdateRef.current > 30) {
-        lastUpdateRef.current = now;
-        runOnJS(addPointToCurrentPath)(e.x, e.y);
-        runOnJS(setDebugTouch)({ x: Math.round(e.x), y: Math.round(e.y) });
+    .onBegin((e) => runOnJS(createPath)(e.x, e.y))
+    .onUpdate((e) => runOnJS(updatePath)(e.x, e.y))
+    .onEnd(() => runOnJS(endPath)());
+
+  /* ================= ACTIONS ================= */
+  const undo = () => setPaths((prev) => prev.slice(0, -1));
+  const clear = () => setPaths([]);
+  
+ /* ================= UPLOAD ================= */
+
+  const uploadPost = async () => {
+    if (paths.length === 0 && caption.trim() === "") {
+      Alert.alert("Nothing to post", "Draw something or add a caption.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      /* 1️⃣ Snapshot canvas */
+      const image = canvasRef.current.makeImageSnapshot();
+      const base64 = image.encodeToBase64();
+
+      const fileUri = FileSystem.cacheDirectory + `doodle_${Date.now()}.png`;
+
+      await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      /* 2️⃣ Upload to Supabase */
+      const fileName = `post/${Date.now()}_doodle.png`;
+      const fileBase64 = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const binary = Uint8Array.from(atob(fileBase64), (c) =>
+        c.charCodeAt(0)
+      );
+
+      const { error } = await supabase.storage
+        .from("doodleppad")
+        .upload(fileName, binary, {
+          contentType: "image/png",
+          upsert: true,
+        });
+
+      if (error) throw error;
+
+      const { data: publicData } = supabase.storage
+        .from("doodleppad")
+        .getPublicUrl(fileName);
+
+      const publicUrl = publicData.publicUrl;
+
+      /* 3️⃣ Save to backend DB */
+      const apiRes = await fetch(
+        "https://mobserv-0din.onrender.com/api/posts/upload-post",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userid: user?.userId || "anonymous",
+            caption: caption.trim(),
+            url: publicUrl,
+            type: "doodle_post",
+            
+          }),
+        }
+      );
+
+      if (!apiRes.ok) {
+        throw new Error("Backend error");
       }
-    })
-    .onEnd(() => {
-      runOnJS(finishCurrentPath)();
-    });
 
-  const onClear = () => setPaths([]);
-  const onUndo = () => setPaths(prev => prev.slice(0, -1));
-  const onSave = async () => Alert.alert("Info", "Use Skia snapshot and save to file system");
+      Alert.alert("✅ Posted", "Your doodle has been shared!");
+      setPaths([]);
+      setCaption("");
+      navigation.goBack();
+    } catch (err) {
+      console.error("Upload failed:", err);
+      Alert.alert("❌ Upload failed", err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
-  // Debug helper: programmatically add a test stroke to verify rendering
-  const addTestStroke = () => {
-    const p = Skia.Path.Make();
-    p.moveTo(50, 50);
-    p.lineTo(120, 80);
-    p.lineTo(100, 140);
-    p.lineTo(60, 120);
-    setPaths(prev => [...prev, { path: p, color: '#FF00FF', strokeWidth: 8 }]);
-    console.log('Added test stroke');
-  }
 
+
+ 
+
+
+
+
+
+
+  /* ================= UI ================= */
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerText}>🎨 Doodle Pad</Text>
+    <SafeAreaView style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Doodle</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      <View style={{ flex: 1 }}>
+      {/* TOOLBAR */}
+      <View style={styles.toolbar}>
+        <TouchableOpacity onPress={undo}>
+          <Ionicons name="arrow-undo-outline" size={22} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={clear}>
+          <Ionicons name="trash-outline" size={22} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setShowStrokeSlider((p) => !p)}
+        >
+          <Ionicons name="pencil-outline" size={22} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setShowColors(true)}>
+          <Ionicons name="color-palette-outline" size={22} />
+        </TouchableOpacity>
+      </View>
+
+      {/* STROKE SLIDER POPUP */}
+ 
+
+      {/* CANVAS */}
+      <View style={styles.canvasCard}>
         <GestureDetector gesture={panGesture}>
-          <View style={{ flex: 1 }}>
-            <Canvas style={styles.canvas}>
-          {paths.map((p, i) => (
-            <Path
-              key={i}
-              path={p.path}
-              color={p.color}
-              // use stroke-only rendering via props instead of passing a Paint object
-              style="stroke"
-              strokeWidth={p.strokeWidth}
-              strokeJoin="round"
-              strokeCap="round"
-            />
-          ))}
-          {currentPath && (
-            <Path
-              path={currentPath.path}
-              color={currentPath.color}
-              style="stroke"
-              strokeWidth={currentPath.strokeWidth}
-              strokeJoin="round"
-              strokeCap="round"
-            />
-          )}
-            </Canvas>
-          </View>
+          <Canvas ref={canvasRef}  style={styles.canvas}>
+            {paths.map((p, i) => (
+              <Path
+                key={i}
+                path={p.path}
+                color={p.color}
+                style="stroke"
+                strokeWidth={p.strokeWidth}
+                strokeCap="round"
+                strokeJoin="round"
+              />
+            ))}
+
+            {currentPath && (
+              <Path
+                path={currentPath.path}
+                color={currentPath.color}
+                style="stroke"
+                strokeWidth={currentPath.strokeWidth}
+                strokeCap="round"
+                strokeJoin="round"
+              />
+            )}
+          </Canvas>
         </GestureDetector>
       </View>
+           {showStrokeSlider && (
+        <View style={styles.strokePopup}>
+          <Text style={styles.sliderLabel}>
+            Stroke Size: {strokeWidth}
+          </Text>
 
-      {/* Debug overlay to show last touch coordinates (remove in production) */}
-      <View style={styles.debugOverlay} pointerEvents="none">
-        <Text style={styles.debugText}>x: {debugTouch.x ?? '-'} y: {debugTouch.y ?? '-'}</Text>
+          <View style={styles.sliderTrack}>
+            <View
+              style={[
+                styles.sliderThumb,
+                { transform: [{ translateX: sliderX }] },
+              ]}
+              {...panResponder.panHandlers}
+            />
+          </View>
+        </View>
+      )}
+
+      {/* CAPTION */}
+      <View style={styles.bottomBar}>
+        <TextInput
+          placeholder="Caption"
+          placeholderTextColor="#999"
+          style={styles.input}
+          value={caption}
+          onChangeText={setCaption}
+        />
+     <TouchableOpacity style={styles.sendButton} onPress={uploadPost}>
+  <Ionicons name="send" size={20} color="#fff" />
+</TouchableOpacity>
+
       </View>
 
-      {/* Color palette */}
-      <ScrollView horizontal style={styles.palette}>
-        {COLORS.map(c => (
-          <TouchableOpacity
-            key={c}
-            style={[styles.colorButton, { backgroundColor: c, borderWidth: color === c ? 2 : 0 }]}
-            onPress={() => setColor(c)}
-          />
-        ))}
-      </ScrollView>
+      {/* COLOR PICKER */}
+      <Modal transparent visible={showColors} animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          onPress={() => setShowColors(false)}
+          activeOpacity={1}
+        >
+          <View style={styles.colorModal}>
+            <Text style={styles.modalTitle}>Choose Color</Text>
 
-      {/* Stroke selector */}
-      <ScrollView horizontal style={styles.palette}>
-        {STROKES.map(s => (
-          <TouchableOpacity
-            key={s}
-            style={[styles.strokeButton, { borderWidth: strokeWidth === s ? 2 : 0 }]}
-            onPress={() => setStrokeWidth(s)}
-          >
-            <View style={{ width: s, height: s, borderRadius: s / 2, backgroundColor: "black" }} />
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Controls */}
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.button} onPress={onUndo}>
-          <Text style={styles.buttonText}>Undo</Text>
+            <View style={styles.colorGrid}>
+              {COLORS.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  style={[
+                    styles.colorCircle,
+                    {
+                      backgroundColor: c,
+                      borderWidth: color === c ? 3 : 1,
+                    },
+                  ]}
+                  onPress={() => {
+                    setColor(c);
+                    setShowColors(false);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={onClear}>
-          <Text style={styles.buttonText}>Clear</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={onSave}>
-          <Text style={styles.buttonText}>Save</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, { backgroundColor: '#8A2BE2' }]} onPress={addTestStroke}>
-          <Text style={styles.buttonText}>Add Test Stroke</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f4f4" },
-  headerText: { fontSize: 22, textAlign: "center", margin: 10, fontWeight: "bold" },
-  canvas: { flex: 1, margin: 10, borderWidth: 1, borderColor: "#ddd", backgroundColor: "white" },
-  palette: { flexDirection: "row", padding: 5, backgroundColor: "#fff" },
-  colorButton: { width: 35, height: 35, borderRadius: 18, marginHorizontal: 5, borderColor: "#333" },
-  strokeButton: { width: 40, height: 40, marginHorizontal: 5, borderRadius: 20, borderColor: "#333", justifyContent: "center", alignItems: "center", backgroundColor: "#ddd" },
-  controls: { flexDirection: "row", justifyContent: "space-around", paddingVertical: 10, backgroundColor: "#eee" },
-  button: { padding: 10, backgroundColor: "#39579A", borderRadius: 8, minWidth: 70, alignItems: "center" },
-  buttonText: { color: "white", fontWeight: "600" },
-  debugOverlay: { position: 'absolute', top: 50, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 6 },
-  debugText: { color: 'white', fontSize: 12 },
+  container: { flex: 1, backgroundColor: "#fff" },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 16,
+    alignItems: "center",
+  },
+
+  headerTitle: { fontSize: 20, fontWeight: "600" },
+
+  toolbar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 10,
+  },
+
+  canvasCard: {
+    flex: 1,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    elevation: 4,
+    overflow: "hidden",
+  },
+
+  canvas: { flex: 1, backgroundColor: "#fff" },
+
+  bottomBar: {
+    flexDirection: "row",
+    padding: 14,
+    borderTopWidth: 1,
+    borderColor: "#eee",
+  },
+
+  input: {
+    flex: 1,
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+    fontSize: 16,
+  },
+
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 12,
+  },
+
+  /* Stroke Slider */
+  strokePopup: {
+    position: "absolute",
+    bottom: 70,
+    right: 12,
+    width: 280,
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 12,
+    elevation: 5,
+  },
+
+  sliderLabel: { fontWeight: "600", marginBottom: 8 },
+
+  sliderTrack: {
+    height: 6,
+    width: 260,
+    backgroundColor: "#ddd",
+    borderRadius: 3,
+  },
+
+  sliderThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#000",
+    position: "absolute",
+    top: -8,
+  },
+
+  /* Color Modal */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  colorModal: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 14,
+    width: "80%",
+  },
+
+  modalTitle: {
+    fontWeight: "600",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+
+  colorGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+
+  colorCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    margin: 8,
+    borderColor: "#333",
+  },
 });

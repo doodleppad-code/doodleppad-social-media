@@ -61,96 +61,89 @@ export default function ImagePost() {
     }
   };
 
-  const uploadPost = async () => {
-    if (!imageUri && !videoUri && caption.trim() === "") {
-      Alert.alert("Nothing to post", "Write something or select media first.");
-      return;
+const uploadPost = async () => {
+    if (!user?.userId) {
+    Alert.alert("Login required", "Please log in to create a post.");
+    return;
+  }
+
+  if (!imageUri && !videoUri && caption.trim() === "") {
+    Alert.alert("Nothing to post", "Write something or select media first.");
+    return;
+  }
+
+  try {
+    setUploading(true);
+
+    const fileUri = imageUri || videoUri;
+    const isVideo = !!videoUri;
+
+    const fileName = `${Date.now()}-${fileUri.split("/").pop()}`;
+    const contentType = isVideo ? "video/mp4" : "image/jpeg";
+    const postType = isVideo ? "video_post" : "image_post";
+
+    // ✅ ANDROID-SAFE FormData upload
+    const formData = new FormData();
+    formData.append("file", {
+      uri: fileUri,
+      name: fileName,
+      type: contentType,
+    });
+
+    const uploadRes = await fetch(
+      `${supabaseUrl}/storage/v1/object/doodleppad/post/${fileName}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${supabaseAnonKey}`,
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      }
+    );
+
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text();
+      throw new Error(errText);
     }
 
-    try {
-      setUploading(true);
-      let publicUrl = null;
-      let contentType = "image/jpeg";
-      let uriToUpload = imageUri;
+    // ✅ Public URL
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/doodleppad/post/${fileName}`;
 
-      if (videoUri) {
-        uriToUpload = videoUri;
-        contentType = "video/mp4";
+    // ✅ Save metadata to backend
+    const apiResponse = await fetch(
+      "https://mobserv-0din.onrender.com/api/posts/upload-post",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userid: user?.userId || "anonymous",
+          caption: caption.trim(),
+          url: publicUrl,
+          type: postType,
+        }),
       }
-
-      if (uriToUpload) {
-        const fileName =
-          Date.now() + "_" + uriToUpload.substring(uriToUpload.lastIndexOf("/") + 1);
-        const base64Data = await FileSystem.readAsStringAsync(uriToUpload, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        const binaryData = Uint8Array.from(atob(base64Data), (c) =>
-          c.charCodeAt(0)
-        );
-
-        const { data, error } = await supabase.storage
-          .from("doodleppad")
-          .upload(`post/${fileName}`, binaryData, {
-            contentType,
-            upsert: true,
-          });
-
-        if (error) throw error;
-
-        const { data: publicData } = supabase.storage
-          .from("doodleppad")
-          .getPublicUrl(`post/${fileName}`);
-
-        publicUrl = publicData.publicUrl;
-        setDownloadURL(publicUrl);
-      }
-
-      Alert.alert("✅ Post Created!", "Your post has been published.");
-      setCaption("");
-      setImageUri(null);
-      setVideoUri(null);
-    
-
-    //  Send metadata to your backend API
-    const apiResponse = await fetch("https://mobserv-0din.onrender.com/api/posts/upload-post", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userid: user?.id || user?._id || user?.userid || "anonymous",
-        caption: caption.trim(),
-        url: downloadURL || publicUrl,
-        type: "image_post",
-      }),
-    });
+    );
 
     if (!apiResponse.ok) {
       throw new Error(`API Error: ${apiResponse.status}`);
     }
 
-    let result;
-    try {
-      result = await apiResponse.json();
-    } catch (e) {
-      const text = await apiResponse.text();
-      console.warn("⚠️ Non-JSON response from server:", text);
-      Alert.alert("Error", "Server error. Please try again later.");
-      return;
-    }
-    console.log("Post saved to DB:", result);
-
     Alert.alert("✅ Post Created!", "Your post has been published.");
+
     setCaption("");
     setImageUri(null);
     setVideoUri(null);
+    setDownloadURL(publicUrl);
+
   } catch (error) {
-    console.error("Upload failed:", error);
-    Alert.alert("❌ Upload failed", error.message);
+    console.error("❌ Upload failed:", error);
+    Alert.alert("Upload failed", error.message);
   } finally {
     setUploading(false);
   }
 };
+
 
   return (
 

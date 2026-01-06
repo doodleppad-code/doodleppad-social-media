@@ -175,7 +175,7 @@ useEffect(() => {
             "Content-Type": "application/json",
           },
               body: JSON.stringify({
-                userid: user?.id || user?._id || user?.userid || 'anonymous',
+                userid: user?.userId || 'anonymous',
                 caption: caption?.trim ? caption.trim() : '',
                 url: downloadURL || publicUrl,
                 type: "audio_post",

@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons"; // ✅ import missing icon
 
 export default function Login() {
   const navigation = useNavigation();
-  const { signIn } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,7 +55,7 @@ export default function Login() {
   username: data.user.username,
   email: data.user.email
 }; 
-  await signIn(userObj);
+  await login(userObj);
     } catch (err) {
       setLoading(false);
       Alert.alert("Error", "Unable to connect to server");

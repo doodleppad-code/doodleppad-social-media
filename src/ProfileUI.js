@@ -1,257 +1,303 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   Image,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   FlatList,
+  TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from './AuthContext';
+import { Ionicons, Feather } from "@expo/vector-icons";
+import { useAuth } from "./AuthContext";
 
 const Profile = () => {
-  const [selectedTab, setSelectedTab] = useState("Saved");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [bio, setBio] = useState(""); // empty bio
+
   const { user } = useAuth();
-  const username = user?.username || user?.id || ""; // logged-in username (fallback empty)
+ const USER_ID = user?.userId;
+ // from AuthContext (safe fallback)
 
-  // 🔥 Fetch user posts
- const fetchPosts = async (uname) => {
-  const unameToUse = uname || username;
-  try {
-    setLoading(true);
-
-    if (!unameToUse) {
-      // No user available yet
-      setPosts([]);
-      setLoading(false);
-      return;
-    }
-
-    const URL = `https://mobserv-0din.onrender.com/api/posts/user/${encodeURIComponent(unameToUse)}`;
-    console.log("🔗 Fetching:", URL);
-
-    const response = await fetch(URL);
-    const raw = await response.text();
-    console.log("🧾 Raw:", raw);
-
-    if (!response.ok) throw new Error("Failed to load posts");
-
-    let data;
+  // 🔹 FETCH REAL POSTS
+  const fetchPosts = async () => {
     try {
-      data = JSON.parse(raw);
-    } catch (e) {
-      console.warn('Non-JSON response for posts:', raw);
-      throw e;
+      setLoading(true);
+
+      const res = await fetch(
+        `https://mobserv-0din.onrender.com/api/posts/user/${USER_ID}`
+      );
+
+      const data = await res.json();
+
+      setPosts(data.posts || data || []);
+    } catch (err) {
+      console.log("Post fetch error:", err);
+      setPosts([]);
+    } finally {
+      setLoading(false);                 
     }
-
-    setPosts(data.posts || []);
-
-  } catch (error) {
-    console.error("❌ Fetch error:", error);
-    Alert.alert("Error", error.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
-    // fetch when component mounts and whenever the user changes
+     if (USER_ID) {
+      console.log(USER_ID)
     fetchPosts();
-  }, []);
-
-  useEffect(() => {
-    if (user) fetchPosts(user.username || user.id);
-  }, [user]);
+  }
+}, [USER_ID]);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <Image
-        source={{ uri: item.url }}
-        style={styles.cardImage}
-        resizeMode="cover"
-      />
-      <View style={styles.cardDetails}>
-        <Text style={styles.cardTitle}>{item.caption || "Untitled"}</Text>
-        <Text style={styles.cardSubtitle}>
-          {item.type?.toUpperCase() || "POST"} · {item.createdAt?.slice(0, 10)}
-        </Text>
-      </View>
+      <Image source={{ uri: item.url }} style={styles.cardImage} />
+
+      {item.type === "video" && (
+        <Ionicons name="play" size={
+          30} color="#fff" style={styles.playIcon} />
+      )}
+
+      {item.type === "audio" && (
+        <View style={styles.audioCircle}>
+          <Text style={styles.audioText}>Audio</Text>
+        </View>
+      )}
     </View>
   );
 
-  const ListHeader = () => (
-    <View>
-      {/* Profile Header */}
-      <View style={styles.profileSection}>
-        <Image
-          source={require("../assets/images.jpeg")} // Replace with dynamic user image
-          style={styles.profileImage}
-        />
-        <Text style={styles.profileName}>{user?.username || 'User'}</Text>
-        <Text style={styles.username}>@{(username || 'guest').toLowerCase()}</Text>
-        <Text style={styles.followText}>10 followers · 50 following</Text>
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" />
       </View>
-
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity onPress={() => setSelectedTab("Created")}>
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === "Created" && styles.activeTab,
-            ]}
-          >
-            Created
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setSelectedTab("Saved")}>
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === "Saved" && styles.activeTab,
-            ]}
-          >
-            Saved
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#888" />
-        <TextInput
-          placeholder="Search your Pins"
-          placeholderTextColor="#888"
-          style={styles.searchInput}
-        />
-      </View>
-    </View>
-  );
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {loading ? (
-        <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
-      ) : (
-        <FlatList
-          data={posts}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.postId || item._id}
-          numColumns={2}
-          ListHeaderComponent={ListHeader}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.grid}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Text style={{ textAlign: "center", color: "#555", marginTop: 20 }}>
-              No posts yet.
-            </Text>
-          }
-        />
-      )}
+      <FlatList
+        data={posts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item._id}
+        numColumns={2}
+        showsVerticalScrollIndicator={false}
+        columnWrapperStyle={{ justifyContent: "space-between" }}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No posts yet</Text>
+        }
+        ListHeaderComponent={
+          <View>
+            {/* HEADER */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Profile</Text>
+              <Ionicons name="settings-outline" size={22} />
+            </View>
+
+            {/* COVER */}
+            <View style={styles.cover}>
+              <Feather name="edit-2" size={18} style={styles.coverEdit} />
+            </View>
+
+            {/* PROFILE ROW */}
+            <View style={styles.profileRow}>
+              <Image
+                source={{ uri: "https://randomuser.me/api/portraits/women/44.jpg" }}
+                style={styles.avatar}
+              />
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>
+                  John Doe <Text style={{ color: "#facc15" }}>👑</Text>
+                </Text>
+                <Text style={styles.username}>@username</Text>
+              </View>
+            </View>
+
+            {/* BIO + ACTIONS */}
+            <View style={styles.profileContent}>
+              <View style={styles.bioBox}>
+                {bio ? (
+                  <Text style={styles.bioText}>{bio}</Text>
+                ) : (
+                  <Text style={styles.bioPlaceholder}>
+                    Add a bio to let people know about you
+                  </Text>
+                )}
+              </View>
+
+              <TouchableOpacity style={styles.editBtn}>
+                <Text style={styles.editText}>
+                  {bio ? "Edit Profile" : "Add Bio"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* STATS */}
+            <View style={styles.stats}>
+              <View style={styles.statBox}>
+                <Ionicons name="image-outline" size={22} />
+                <Text>{posts.length}</Text>
+              </View>
+
+              <View style={styles.statBox}>
+                <Ionicons name="people-outline" size={22} />
+                <Text>Followers</Text>
+              </View>
+            </View>
+          </View>
+        }
+      />
     </View>
   );
 };
 
+export default Profile;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingHorizontal: 14,
   },
-  profileSection: {
+
+  loader: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
   },
-  profileImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    marginBottom: 8,
+
+  emptyText: {
+    textAlign: "center",
+    color: "#777",
+    marginTop: 40,
   },
-  profileName: {
-    color: "#000",
-    fontSize: 20,
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 40,
+    marginBottom: 12,
+  },
+
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "500",
+  },
+
+  cover: {
+    height: 160,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    elevation: 3,
+    marginBottom: 30,
+  },
+
+  coverEdit: {
+    position: "absolute",
+    right: 14,
+    bottom: 14,
+  },
+
+  profileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: -30,
+  },
+
+  avatar: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+
+  name: {
+    fontSize: 18,
     fontWeight: "600",
   },
+
   username: {
-    color: "#000",
-    fontSize: 14,
-  },
-  followText: {
-    color: "#000",
-    marginTop: 4,
+    color: "red",
     fontSize: 13,
   },
-  tabContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginVertical: 10,
+
+  profileContent: {
+    marginTop: 16,
   },
-  tabText: {
-    color: "#2c2c2c",
-    fontSize: 16,
-    marginHorizontal: 20,
-    paddingBottom: 4,
-  },
-  activeTab: {
-    color: "#2c2c2c",
-    borderBottomWidth: 2,
-    borderBottomColor: "#000",
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
+
+  bioBox: {
+    backgroundColor: "#ededed",
+    padding: 14,
     borderRadius: 12,
-    paddingHorizontal: 10,
-    marginVertical: 12,
   },
-  searchInput: {
-    flex: 1,
-    color: "#000",
-    padding: 8,
+
+  bioText: {
+    fontSize: 14,
+    color: "#111",
+    lineHeight: 20,
   },
-  grid: {
-    paddingBottom: 60,
+
+  bioPlaceholder: {
+    fontSize: 14,
+    color: "#777",
+    fontStyle: "italic",
   },
-  row: {
-    justifyContent: "space-between",
+
+  editBtn: {
+    borderWidth: 1,
+    borderColor: "#000",
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    marginVertical: 14,
   },
-  card: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 14,
-    overflow: "hidden",
-    marginBottom: 16,
-    flex: 0.48,
-  },
-  cardImage: {
-    width: "100%",
-    height: 120,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-  },
-  cardDetails: {
-    padding: 10,
-  },
-  cardTitle: {
-    color: "#161616",
-    fontWeight: "600",
+
+  editText: {
+    fontWeight: "500",
     fontSize: 15,
   },
-  cardSubtitle: {
-    color: "#555",
-    fontSize: 12,
-    marginTop: 3,
+
+  stats: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 20,
+  },
+
+  statBox: {
+    alignItems: "center",
+  },
+
+  card: {
+    width: "48%",
+    marginBottom: 16,
+  },
+
+  cardImage: {
+    height: 180,
+    borderRadius: 12,
+  },
+
+  playIcon: {
+    position: "absolute",
+    top: "40%",
+    left: "42%",
+  },
+
+  audioCircle: {
+    position: "absolute",
+    top: "35%",
+    left: "30%",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  audioText: {
+    color: "#fff",
+    fontWeight: "600",
   },
 });
-
-export default Profile;

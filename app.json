@@ -4,7 +4,8 @@
     "slug": "doodelpad_app",
     "plugins": [
       "react-native-edge-to-edge",
-      "expo-av"
+      "expo-av",
+      "expo-font"
     ],
     "version": "1.0.0",
     "orientation": "portrait",
@@ -48,5 +49,3 @@
     }
   }
 }
-
-

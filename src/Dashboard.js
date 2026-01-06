@@ -11,15 +11,23 @@ import {
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { Video } from "expo-av";
 import { useAuth } from './AuthContext';
+import { useFonts } from "expo-font";
+import { Sacramento_400Regular } from "@expo-google-fonts/sacramento";
 
+
+ 
 const Dashboard = ({ navigation }) => {
   const [open, setOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+   const [fontsLoaded] = useFonts({
+    Sacramento: Sacramento_400Regular,
+  });
 
   const { user } = useAuth();
-  const USER_ID = user?.id || user?._id || user?.userid || "Aditya";
+  const USER_ID = user?.userId || "Aditya";
 
+  
 const handleLike = async (postId) => {
   try {
     console.log("➡ Sending Like Request for:", postId);
@@ -110,6 +118,10 @@ console.log("POST TYPE:", item.type);
 
         {/* Media */}
         {item?.type === "image_post" && (
+         <Image source={{ uri: item.url }} style={styles.postImage} resizeMode="cover" />
+
+        )}
+            {item?.type === "doodle_post" && (
          <Image source={{ uri: item.url }} style={styles.postImage} resizeMode="cover" />
 
         )}
@@ -261,7 +273,7 @@ console.log("POST TYPE:", item.type);
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffffff",
   },
 
   header: {
@@ -288,10 +300,11 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 20,
+    fontSize: 40,
     fontWeight: "600",
+     fontFamily: "Sacramento",
   },
-
+  
   circle: {
     width: 36,
     height: 36,
@@ -378,7 +391,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ff1d2cff",
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
@@ -391,7 +404,7 @@ const styles = StyleSheet.create({
   optionButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ff1d2cff",
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
@@ -406,3 +419,4 @@ const styles = StyleSheet.create({
 });
 
 export default Dashboard;
+

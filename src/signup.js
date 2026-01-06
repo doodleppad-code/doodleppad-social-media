@@ -23,7 +23,7 @@ const SignUp = ({ navigation }) => {
   const [showRePassword, setShowRePassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { login } = useAuth();
 
   // ====== API call to backend ====
 const handleSignUp = async () => {
@@ -76,8 +76,8 @@ const handleSignUp = async () => {
       Alert.alert("Success", "Signup successful!");
       // if server returned user and token, sign in automatically
       if (data.user) {
-        const userObj = { id: data.user?.id || data.user?._id || null, username: data.user?.name || data.user?.username || data.user?.email, token: data.token || null };
-        await signIn(userObj);
+        const userObj = { userId: data.user?.userId || data.user?.id || data.user?._id || null, username: data.user?.name || data.user?.username || data.user?.email, token: data.token || null };
+        await login(userObj);
       } else {
         navigation.navigate("Login");
       }

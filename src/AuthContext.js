@@ -1,46 +1,33 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
- 
+
   useEffect(() => {
-    const restore = async () => {
-      try {
-        const json = await AsyncStorage.getItem('user');
-        if (json) setUser(JSON.parse(json));
-      } catch (e) {
-        console.warn('Auth restore failed', e);
-      } finally {
-        setLoading(false);
-      }
+    const restoreUser = async () => {
+      const storedUser = await AsyncStorage.getItem("user");
+      if (storedUser) setUser(JSON.parse(storedUser));
+      setLoading(false);
     };
-    restore();
+    restoreUser();
   }, []);
 
-  const signIn = async (userData) => {
+  const login = async (userData) => {
     setUser(userData);
-    try {
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-    } catch (e) {
-      console.warn('Failed to persist user', e);
-    }
+    await AsyncStorage.setItem("user", JSON.stringify(userData));
   };
 
-  const signOut = async () => {
+  const logout = async () => {
     setUser(null);
-    try {
-      await AsyncStorage.removeItem('user');
-    } catch (e) {
-      console.warn('Failed to remove user', e);
-    }
+    await AsyncStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
